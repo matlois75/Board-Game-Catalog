@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Board Game Oasis</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="bg-gradient-radial">
+      <div class="container">
+        <h1 id="your-board-game-oasis" class="animated-title">
+          Your Board Game Oasis
+        </h1>
+        <p>Organize, Discover, and Play!</p>
+        <button class="btn add-game-btn">Add Game</button>
+      </div>
+    </header>
+
+    <main class="container" role="main">
+      <section class="animated-section">
+        <h2 id="your-collection">Your Collection</h2>
+        <div id="gameCardContainer" class="game-card-container">
+          <!-- Game cards will be dynamically added here -->
+        </div>
+      </section>
+
+      <section class="animated-section">
+        <h2 id="find-your-next-game">Find Your Next Game</h2>
+        <div id="filterContainer" class="filter-container">
+          <!-- Filters will be dynamically added here -->
+        </div>
+
+        <div id="gameList" class="game-list">
+          <!-- Game list items will be dynamically added here -->
+        </div>
+
+        <div class="mt-8 flex justify-center">
+          <button class="btn random-game-btn">Choose for Me</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="gameDetails" class="game-details">
+      <div class="game-details-content">
+        <button class="close-modal-btn" onclick="closeGameDetails()">
+          &times;
+        </button>
+        <h2 class="game-details-title"></h2>
+        <img src="" alt="Game Image" class="game-details-image" />
+        <p class="game-details-description"></p>
+        <div class="game-details-info">
+          <div class="game-details-info-item">
+            <span class="game-details-info-label">Players:</span>
+            <span class="game-details-info-value"></span>
+          </div>
+          <div class="game-details-info-item">
+            <span class="game-details-info-label">Play Time:</span>
+            <span class="game-details-info-value"></span>
+          </div>
+          <div class="game-details-info-item">
+            <span class="game-details-info-label">Category:</span>
+            <span class="game-details-info-value"></span>
+          </div>
+          <div class="game-details-info-item">
+            <span class="game-details-info-label">Author:</span>
+            <span class="game-details-info-value"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="addGameModal" class="modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Game</h5>
+            <button type="button" class="close-modal-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="gameName">Game Name:</label>
+              <input type="text" id="gameName" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="gameAuthor">Author:</label>
+              <input type="text" id="gameAuthor" class="form-control" />
+            </div>
+            <button id="addGameBtn" class="btn">Add Game</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="scripts.js"></script>
+  </body>
+</html>
