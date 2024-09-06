@@ -35,6 +35,10 @@ const games = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+  if (!gameDetails) {
+    return;
+  }
+
   loadGameCards();
   setupFilters();
 
@@ -43,22 +47,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const addGameBtn = document.querySelector('.add-game-btn');
   if (addGameBtn) {
     addGameBtn.addEventListener('click', openModal);
-  } else {
-    console.error('Add Game button not found');
   }
 
   const addGameModalBtn = document.querySelector('#addGameBtn');
   if (addGameModalBtn) {
     addGameModalBtn.addEventListener('click', addGame);
-  } else {
-    console.error('Add Game modal button not found');
   }
 
   const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', closeModal);
-  } else {
-    console.error('Close modal button not found');
+  }
+
+  // Add event listener to close game details when clicking outside
+  document.addEventListener('click', handleGameDetailsClick);
+  
+  // Add event listener for the close button
+  const closeGameDetailsBtn = gameDetails.querySelector('.close-game-details-btn');
+  if (closeGameDetailsBtn) {
+    closeGameDetailsBtn.addEventListener('click', closeGameDetails);
   }
 });
 
@@ -80,10 +87,30 @@ function openGameDetails(gameId) {
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = gameData.playTime;
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = gameData.category.join(', ');
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
+  
+  // Prevent the click event from immediately closing the details
+  setTimeout(() => {
+    document.addEventListener('click', handleOutsideClick);
+  }, 0);
 }
 
 function closeGameDetails() {
   gameDetails.classList.remove('open');
+  document.removeEventListener('click', handleOutsideClick);
+}
+
+function handleOutsideClick(event) {
+  const gameDetailsContent = gameDetails.querySelector('.game-details-content');
+  if (!gameDetailsContent.contains(event.target)) {
+    closeGameDetails();
+  }
+}
+
+function handleGameDetailsClick(event) {
+  if (event.target.closest('.game-card')) {
+    const gameId = event.target.closest('.game-card').querySelector('.card-title').textContent;
+    openGameDetails(gameId);
+  }
 }
 
 function addNewGameCard(gameData) {
@@ -177,7 +204,6 @@ async function addGame() {
         alert('Game not found. Please check the name and try again.');
       }
     } catch (error) {
-      console.error('Error fetching game data:', error);
       alert('An error occurred while fetching game data. Please try again.');
     }
   } else {
@@ -196,14 +222,68 @@ async function fetchGameInfo(gameName) {
 
     const items = xmlDoc.getElementsByTagName('item');
     if (items.length > 0) {
-      const gameId = items[0].getAttribute('id'); // Get the first matching game
-      return await fetchGameDetails(gameId); // Fetch details of that game
+      // Find the closest match
+      let closestMatch = items[0];
+      let closestScore = 0;
+      
+      for (let i = 0; i < items.length; i++) {
+        const name = items[i].querySelector('name').getAttribute('value');
+        const score = calculateSimilarity(gameName.toLowerCase(), name.toLowerCase());
+        
+        if (score > closestScore) {
+          closestMatch = items[i];
+          closestScore = score;
+        }
+      }
+
+      const gameId = closestMatch.getAttribute('id');
+      return await fetchGameDetails(gameId);
     }
     return null;
   } catch (error) {
-    console.error('Error fetching game data:', error);
     return null;
   }
+}
+
+function calculateSimilarity(s1, s2) {
+  let longer = s1;
+  let shorter = s2;
+  if (s1.length < s2.length) {
+    longer = s2;
+    shorter = s1;
+  }
+  const longerLength = longer.length;
+  if (longerLength === 0) {
+    return 1.0;
+  }
+  return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
+
+function editDistance(s1, s2) {
+  s1 = s1.toLowerCase();
+  s2 = s2.toLowerCase();
+
+  const costs = new Array();
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0)
+        costs[j] = j;
+      else {
+        if (j > 0) {
+          let newValue = costs[j - 1];
+          if (s1.charAt(i - 1) !== s2.charAt(j - 1))
+            newValue = Math.min(Math.min(newValue, lastValue),
+              costs[j]) + 1;
+          costs[j - 1] = lastValue;
+          lastValue = newValue;
+        }
+      }
+    }
+    if (i > 0)
+      costs[s2.length] = lastValue;
+  }
+  return costs[s2.length];
 }
 
 async function fetchGameDetails(gameId) {
@@ -221,18 +301,17 @@ async function fetchGameDetails(gameId) {
     const maxPlayers = xmlDoc.querySelector('maxplayers').getAttribute('value');
     const playingTime = xmlDoc.querySelector('playingtime').getAttribute('value');
     const category = xmlDoc.querySelector('link[type="boardgamecategory"]')?.getAttribute('value') || 'Unknown';
-    const imageUrl = xmlDoc.querySelector('image')?.textContent || './images/placeholder.jpg'; // Use a placeholder image if not found
+    const imageUrl = xmlDoc.querySelector('image')?.textContent || './images/placeholder.jpg';
 
     return {
       title: name,
       image: imageUrl,
       description: description,
-      playerCount: `${minPlayers}-${maxPlayers} Players`,
-      playTime: `${playingTime} Minutes`,
-      category: category,
+      playerCount: `${minPlayers}-${maxPlayers}`,
+      playTime: `${playingTime}`,
+      category: [category], // Changed to array to match the existing game data structure
     };
   } catch (error) {
-    console.error('Error fetching game details:', error);
     return null;
   }
 }
@@ -241,8 +320,6 @@ function openModal() {
   const modal = document.getElementById('addGameModal');
   if (modal) {
     modal.style.display = 'block';
-  } else {
-    console.error('Modal element not found');
   }
 }
 
@@ -253,8 +330,6 @@ function closeModal() {
     // Clear input fields
     document.getElementById('gameName').value = '';
     document.getElementById('gameAuthor').value = '';
-  } else {
-    console.error('Modal element not found');
   }
 }
 
