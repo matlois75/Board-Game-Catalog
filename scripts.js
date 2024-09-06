@@ -3,6 +3,10 @@ const gameCardContainer = document.getElementById('gameCardContainer');
 const gameList = document.getElementById('gameList');
 const filterContainer = document.getElementById('filterContainer');
 const addGameModal = document.getElementById('addGameModal');
+const removeGameBtn = document.querySelector('.remove-game-btn');
+const addGameBtn = document.querySelector('.add-game-btn');
+const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
+let isRemoveMode = false;
 
 const games = {
   "Azul": {
@@ -59,14 +63,25 @@ document.addEventListener('DOMContentLoaded', function() {
     closeModalBtn.addEventListener('click', closeModal);
   }
 
-  // Add event listener to close game details when clicking outside
+  // Update this event listener
   document.addEventListener('click', handleGameDetailsClick);
   
-  // Add event listener for the close button
   const closeGameDetailsBtn = gameDetails.querySelector('.close-game-details-btn');
   if (closeGameDetailsBtn) {
     closeGameDetailsBtn.addEventListener('click', closeGameDetails);
   }
+
+  if (removeGameBtn) {
+    removeGameBtn.addEventListener('click', toggleRemoveMode);
+  }
+
+  if (addGameBtn) {
+    addGameBtn.addEventListener('click', openModal);
+}
+
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', closeModal);
+}
 });
 
 function loadGameCards(filteredGames = games) {
@@ -77,21 +92,27 @@ function loadGameCards(filteredGames = games) {
   }
 }
 
-function openGameDetails(gameId) {
-  gameDetails.classList.add('open');
-  const gameData = games[gameId];
-  gameDetails.querySelector('.game-details-title').textContent = gameData.title;
-  gameDetails.querySelector('.game-details-image').src = gameData.image;
-  gameDetails.querySelector('.game-details-description').textContent = gameData.description;
-  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = gameData.playerCount;
-  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = gameData.playTime;
-  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = gameData.category.join(', ');
-  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
-  
-  // Prevent the click event from immediately closing the details
-  setTimeout(() => {
-    document.addEventListener('click', handleOutsideClick);
-  }, 0);
+function openGameDetails(event) {
+  if (!isRemoveMode) {
+    const gameCard = event.target.closest('.game-card');
+    if (gameCard) {
+      const gameId = gameCard.dataset.gameTitle;
+      gameDetails.classList.add('open');
+      const gameData = games[gameId];
+      gameDetails.querySelector('.game-details-title').textContent = gameData.title;
+      gameDetails.querySelector('.game-details-image').src = gameData.image;
+      gameDetails.querySelector('.game-details-description').textContent = gameData.description;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = gameData.playerCount;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = gameData.playTime;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = gameData.category.join(', ');
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
+      
+      // Prevent the click event from immediately closing the details
+      setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+      }, 0);
+    }
+  }
 }
 
 function closeGameDetails() {
@@ -107,15 +128,14 @@ function handleOutsideClick(event) {
 }
 
 function handleGameDetailsClick(event) {
-  if (event.target.closest('.game-card')) {
-    const gameId = event.target.closest('.game-card').querySelector('.card-title').textContent;
-    openGameDetails(gameId);
+  if (!isRemoveMode && event.target.closest('.game-card')) {
+    openGameDetails(event);
   }
 }
 
 function addNewGameCard(gameData) {
   const newGameCard = `
-    <div class="game-card" onclick="openGameDetails('${gameData.title}')">
+    <div class="game-card" data-game-title="${gameData.title}">
       <img src="${gameData.image}" alt="${gameData.title}" class="w-full h-48 object-cover rounded-md">
       <div class="card-content px-4 py-2 rounded-b-md bg-gray-800 opacity-75">
         <h3 class="card-title text-white font-bold">${gameData.title}</h3>
@@ -125,6 +145,7 @@ function addNewGameCard(gameData) {
           <span class="tag">${gameData.playTime}</span>
         </div>
       </div>
+      <button class="remove-button" data-game-title="${gameData.title}">-</button>
     </div>
   `;
   gameCardContainer.innerHTML += newGameCard;
@@ -299,16 +320,26 @@ async function fetchGameDetails(gameId) {
     const description = xmlDoc.querySelector('description').textContent || 'No description available.';
     const minPlayers = xmlDoc.querySelector('minplayers').getAttribute('value');
     const maxPlayers = xmlDoc.querySelector('maxplayers').getAttribute('value');
-    const playingTime = xmlDoc.querySelector('playingtime').getAttribute('value');
+    const playingTime = parseInt(xmlDoc.querySelector('playingtime').getAttribute('value'));
     const category = xmlDoc.querySelector('link[type="boardgamecategory"]')?.getAttribute('value') || 'Unknown';
     const imageUrl = xmlDoc.querySelector('image')?.textContent || './images/placeholder.jpg';
+
+    // Categorize play time
+    let playTimeCategory;
+    if (playingTime <= 30) {
+      playTimeCategory = 'Quick';
+    } else if (playingTime <= 60) {
+      playTimeCategory = 'Medium';
+    } else {
+      playTimeCategory = 'Long';
+    }
 
     return {
       title: name,
       image: imageUrl,
       description: description,
       playerCount: `${minPlayers}-${maxPlayers}`,
-      playTime: `${playingTime}`,
+      playTime: playTimeCategory,
       category: [category], // Changed to array to match the existing game data structure
     };
   } catch (error) {
@@ -317,28 +348,59 @@ async function fetchGameDetails(gameId) {
 }
 
 function openModal() {
-  const modal = document.getElementById('addGameModal');
-  if (modal) {
-    modal.style.display = 'block';
+  addGameModal.style.display = 'block';
+  // Add event listener for clicking outside the modal
+  setTimeout(() => {
+      document.addEventListener('click', handleOutsideModalClick);
+  }, 0);
+}
+
+function handleOutsideModalClick(event) {
+  if (event.target === addGameModal) {
+      closeModal();
   }
 }
 
 function closeModal() {
-  const modal = document.getElementById('addGameModal');
-  if (modal) {
-    modal.style.display = 'none';
-    // Clear input fields
-    document.getElementById('gameName').value = '';
-    document.getElementById('gameAuthor').value = '';
+  addGameModal.style.display = 'none';
+  // Remove the event listener when closing the modal
+  document.removeEventListener('click', handleOutsideModalClick);
+  // Clear input fields
+  document.getElementById('gameName').value = '';
+  document.getElementById('gameAuthor').value = '';
+}
+
+function toggleRemoveMode() {
+  isRemoveMode = !isRemoveMode;
+  gameCardContainer.classList.toggle('remove-mode', isRemoveMode);
+  removeGameBtn.textContent = isRemoveMode ? 'Finish Removing' : 'Remove Game';
+
+  const gameCards = gameCardContainer.querySelectorAll('.game-card');
+  gameCards.forEach(card => {
+    card.classList.toggle('remove-mode', isRemoveMode);
+  });
+
+  if (isRemoveMode) {
+    // Add event listener to the container, not individual cards
+    gameCardContainer.addEventListener('click', handleRemoveGame);
+  } else {
+    gameCardContainer.removeEventListener('click', handleRemoveGame);
+    // Reload cards to ensure proper state after exiting remove mode
+    loadGameCards();
   }
 }
 
-function loadFilters() {
-  const filterCategories = ['2 Players', '4 Players', '6 Players', 'Strategy', 'Party', 'Trivia'];
-  filterCategories.forEach(category => {
-    const newFilter = `
-      <button class="filter" onclick="filterByCategory('${category}')">${category}</button>
-    `;
-    filterContainer.innerHTML += newFilter;
-  });
+function handleRemoveGame(event) {
+  const removeButton = event.target.closest('.remove-button');
+  if (removeButton && isRemoveMode) {
+    event.stopPropagation(); // Prevent opening game details
+    const gameTitle = removeButton.dataset.gameTitle;
+    delete games[gameTitle];
+    
+    // Remove the game card from the DOM
+    const gameCard = removeButton.closest('.game-card');
+    gameCard.remove();
+    
+    // No need to call loadGameCards() here, as we've directly removed the card
+  }
 }

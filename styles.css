@@ -6,6 +6,8 @@
     --text-color: #4a4a4a;
     --card-background: #ffffff;
     --header-gradient: linear-gradient(135deg, #7c5295 0%, #b8a9c9 100%);
+    --danger-color: #dc3545;
+    --danger-hover-color: #c82333;
 }
 
 body {
@@ -70,6 +72,7 @@ main.container {
     flex-direction: column;
     width: 100%;
     height: 350px;
+    position: relative;
 }
 
 .game-card:hover {
@@ -267,9 +270,44 @@ main.container {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.add-game-container {
+.game-management-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
     margin-top: 2rem;
-    text-align: center;
+}
+
+.remove-game-btn {
+    background-color: var(--danger-color);
+}
+
+.remove-game-btn:hover {
+    background-color: var(--danger-hover-color);
+}
+
+.game-card .remove-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 25px;
+    height: 25px;
+    background-color: rgba(220, 53, 69, 0.8);  /* semi-transparent red */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+    transition: background-color 0.3s ease;
+  }
+
+  .game-card .remove-button:hover {
+    background-color: rgba(220, 53, 69, 1);  /* solid red on hover */
+  }
+
+.game-card.remove-mode .remove-button {
+    display: block;
 }
 
 .game-details {
@@ -374,10 +412,8 @@ main.container {
 }
 
 .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    position: relative;
+    padding-right: 30px;
 }
 
 .modal-title {
@@ -387,13 +423,14 @@ main.container {
 }
 
 .close-modal-btn {
-    color: var(--secondary-color);
-    float: right;
-    font-size: 32px;
-    font-weight: bold;
-    cursor: pointer;
-    background: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: transparent;
     border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--primary-color);
     transition: color 0.3s ease;
 }
 

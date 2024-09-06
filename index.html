@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cathy's Games</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -22,10 +22,9 @@
           Cathy's Games
         </h1>
         <p>What will we play?</p>
-        <div class="add-game-container">
-          <button class="btn-primary add-game-btn" onclick="openModal()">
-            Add Game
-          </button>
+        <div class="game-management-container">
+          <button class="btn-primary add-game-btn">Add Game</button>
+          <button class="btn-primary remove-game-btn">Remove Game</button>
         </div>
       </div>
     </header>
@@ -35,7 +34,9 @@
         <h2 id="your-collection" class="text-3xl font-bold mb-4">
           Your Collection
         </h2>
-        <div id="gameCardContainer" class="game-card-container"></div>
+        <div id="gameCardContainer" class="game-card-container">
+          <!-- Game cards will be dynamically inserted here -->
+        </div>
       </section>
 
       <section
@@ -47,7 +48,7 @@
         <div id="filterContainer" class="filter-container mb-8">
           <div class="filter-group">
             <label for="playerCountFilter" class="filter-label"
-              >Number of Players:</label
+              >Number of Players: <span id="playerCountValue">1</span></label
             >
             <input
               type="range"
@@ -57,10 +58,9 @@
               value="1"
               class="slider"
             />
-            <span id="playerCountValue">1</span>
           </div>
           <div class="filter-group">
-            <label for="gameTypeFilter" class="filter-label">Game Types:</label>
+            <label class="filter-label">Game Types:</label>
             <div class="dropdown">
               <button class="dropbtn">Select Game Types</button>
               <div class="dropdown-content">
@@ -104,7 +104,7 @@
             </div>
           </div>
           <div class="filter-group">
-            <label for="playTimeFilter" class="filter-label">Play Time:</label>
+            <label class="filter-label">Play Time:</label>
             <div class="dropdown">
               <button class="dropbtn">Select Play Time</button>
               <div class="dropdown-content">
@@ -125,23 +125,18 @@
           </div>
           <button id="resetFilters" class="btn-primary">Reset Filters</button>
         </div>
-        <div id="gameList" class="game-list"></div>
+        <div id="gameList" class="game-list">
+          <!-- Filtered game list will be dynamically inserted here -->
+        </div>
         <div class="mt-8 flex justify-center">
-          <button
-            class="btn-primary choose-for-me-btn"
-            onclick="chooseRandomGame()"
-          >
-            RANDOM CHOICE
-          </button>
+          <button class="btn-primary random-game-btn">RANDOM CHOICE</button>
         </div>
       </section>
     </main>
 
     <div id="gameDetails" class="game-details">
       <div class="game-details-content animate__animated animate__zoomIn">
-        <button class="close-game-details-btn" onclick="closeGameDetails()">
-          ×
-        </button>
+        <button class="close-game-details-btn">&times;</button>
         <h2 class="game-details-title"></h2>
         <img src="" alt="Game Image" class="game-details-image" />
         <p class="game-details-description"></p>
@@ -171,26 +166,23 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Add New Game</h5>
-            <button
-              type="button"
-              class="close-modal-btn"
-              onclick="closeModal()"
-            >
-              ×
-            </button>
+            <button type="button" class="close-modal-btn">&times;</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
               <label for="gameName">Game Name:</label>
-              <input type="text" id="gameName" class="form-control" />
+              <input type="text" id="gameName" class="form-control" required />
             </div>
             <div class="form-group">
               <label for="gameAuthor">Author:</label>
-              <input type="text" id="gameAuthor" class="form-control" />
+              <input
+                type="text"
+                id="gameAuthor"
+                class="form-control"
+                required
+              />
             </div>
-            <button id="addGameBtn" class="btn-primary" onclick="addGame()">
-              Add Game
-            </button>
+            <button id="addGameBtn" class="btn-primary">Add Game</button>
           </div>
         </div>
       </div>
