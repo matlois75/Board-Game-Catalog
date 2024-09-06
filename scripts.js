@@ -9,38 +9,37 @@ const games = {
     title: "Azul",
     image: "./images/azul.jpg",
     description: "Azul is a tile-drafting game where players score points by strategically placing colored tiles on their player boards.",
-    playerCount: "2-4 Players",
-    playTime: "30-45 Minutes",
-    category: "Strategy",
+    playerCount: "2-4",
+    playTime: "Medium",
+    category: ["Strategy"],
     author: "Michael Kiesling"
   },
   "Abducktion": {
     title: "Abducktion",
     image: "./images/abducktion.jpg",
     description: "Abducktion is a wacky party game where players try to abduct unsuspecting citizens and collect their belongings.",
-    playerCount: "3-8 Players",
-    playTime: "15-30 Minutes",
-    category: "Party",
+    playerCount: "3-8",
+    playTime: "Quick",
+    category: ["Party", "Bluffing"],
     author: "Evan & Josh's Very Special Games Co."
   },
   "Wingspan": {
     title: "Wingspan",
     image: "./images/wingspan.jpg",
     description: "Wingspan is a bird-themed engine-building game where players attract birds to their wildlife preserves and score points based on their bird collections.",
-    playerCount: "1-5 Players",
-    playTime: "40-70 Minutes",
-    category: "Strategy",
+    playerCount: "1-5",
+    playTime: "Medium",
+    category: ["Strategy"],
     author: "Elizabeth Hargrave"
   }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
   loadGameCards();
-  loadFilters();
+  setupFilters();
 
   document.querySelector('.random-game-btn').addEventListener('click', chooseRandomGame);
   
-  // Update the selector for the "Add Game" button
   const addGameBtn = document.querySelector('.add-game-btn');
   if (addGameBtn) {
     addGameBtn.addEventListener('click', openModal);
@@ -48,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Add Game button not found');
   }
 
-  // Add event listener for the "Add Game" button in the modal
   const addGameModalBtn = document.querySelector('#addGameBtn');
   if (addGameModalBtn) {
     addGameModalBtn.addEventListener('click', addGame);
@@ -56,7 +54,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Add Game modal button not found');
   }
 
-  // Add event listener for closing the modal
   const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', closeModal);
@@ -65,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-function loadGameCards() {
+function loadGameCards(filteredGames = games) {
   gameCardContainer.innerHTML = '';
-  for (const gameTitle in games) {
-    const game = games[gameTitle];
+  for (const gameTitle in filteredGames) {
+    const game = filteredGames[gameTitle];
     addNewGameCard(game);
   }
 }
@@ -81,7 +78,7 @@ function openGameDetails(gameId) {
   gameDetails.querySelector('.game-details-description').textContent = gameData.description;
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = gameData.playerCount;
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = gameData.playTime;
-  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = gameData.category;
+  gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = gameData.category.join(', ');
   gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
 }
 
@@ -96,8 +93,8 @@ function addNewGameCard(gameData) {
       <div class="card-content px-4 py-2 rounded-b-md bg-gray-800 opacity-75">
         <h3 class="card-title text-white font-bold">${gameData.title}</h3>
         <div class="tags">
-          <span class="tag">${gameData.category}</span>
-          <span class="tag">${gameData.playerCount}</span>
+          ${gameData.category.map(cat => `<span class="tag">${cat}</span>`).join('')}
+          <span class="tag">${gameData.playerCount} Players</span>
           <span class="tag">${gameData.playTime}</span>
         </div>
       </div>
@@ -106,35 +103,60 @@ function addNewGameCard(gameData) {
   gameCardContainer.innerHTML += newGameCard;
 }
 
-function filterByPlayerCount(playerCount) {
-  const gameCards = gameCardContainer.querySelectorAll('.game-card');
-  gameCards.forEach(card => {
-    const playerCountText = card.querySelector('.card-content .tag:nth-child(2)').textContent;
-    if (playerCountText.includes(playerCount)) {
-      card.style.display = 'block';
-    } else {
-      card.style.display = 'none';
-    }
+function setupFilters() {
+  const playerCountFilter = document.getElementById('playerCountFilter');
+  const playerCountValue = document.getElementById('playerCountValue');
+  const gameTypeCheckboxes = document.querySelectorAll('input[name="gameType"]');
+  const playTimeCheckboxes = document.querySelectorAll('input[name="playTime"]');
+  const resetFiltersBtn = document.getElementById('resetFilters');
+
+  playerCountFilter.addEventListener('input', function() {
+    playerCountValue.textContent = this.value === '8' ? '8+' : this.value;
+    applyFilters();
   });
+
+  gameTypeCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', applyFilters);
+  });
+
+  playTimeCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', applyFilters);
+  });
+
+  resetFiltersBtn.addEventListener('click', resetFilters);
 }
 
-function filterByCategory(category) {
-  const gameCards = gameCardContainer.querySelectorAll('.game-card');
-  gameCards.forEach(card => {
-    const categoryText = card.querySelector('.card-content .tag:first-child').textContent;
-    if (categoryText === category) {
-      card.style.display = 'block';
-    } else {
-      card.style.display = 'none';
-    }
-  });
+function applyFilters() {
+  const playerCount = document.getElementById('playerCountFilter').value;
+  const selectedGameTypes = Array.from(document.querySelectorAll('input[name="gameType"]:checked')).map(cb => cb.value);
+  const selectedPlayTimes = Array.from(document.querySelectorAll('input[name="playTime"]:checked')).map(cb => cb.value);
+
+  const filteredGames = Object.fromEntries(
+    Object.entries(games).filter(([_, game]) => {
+      const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
+      const meetsPlayerCount = playerCount <= maxPlayers && (playerCount >= minPlayers || maxPlayers === '+');
+      const meetsGameType = selectedGameTypes.length === 0 || game.category.some(cat => selectedGameTypes.includes(cat));
+      const meetsPlayTime = selectedPlayTimes.length === 0 || selectedPlayTimes.includes(game.playTime);
+
+      return meetsPlayerCount && meetsGameType && meetsPlayTime;
+    })
+  );
+
+  loadGameCards(filteredGames);
+}
+
+function resetFilters() {
+  document.getElementById('playerCountFilter').value = 1;
+  document.getElementById('playerCountValue').textContent = '1';
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  loadGameCards();
 }
 
 function chooseRandomGame() {
-  const filteredGameCards = gameCardContainer.querySelectorAll('.game-card:not([style*="display: none"])');
-  if (filteredGameCards.length > 0) {
-    const randomIndex = Math.floor(Math.random() * filteredGameCards.length);
-    filteredGameCards[randomIndex].click();
+  const gameCards = gameCardContainer.querySelectorAll('.game-card');
+  if (gameCards.length > 0) {
+    const randomIndex = Math.floor(Math.random() * gameCards.length);
+    gameCards[randomIndex].click();
   }
 }
 
@@ -144,12 +166,13 @@ async function addGame() {
 
   if (gameName && gameAuthor) {
     try {
-      const gameData = await fetchGameInfo(gameName); // Fetch details by game name
+      const gameData = await fetchGameInfo(gameName);
       if (gameData) {
-        gameData.author = gameAuthor; // Add the provided author information
-        games[gameData.title] = gameData; // Add game to the games list
-        addNewGameCard(gameData); // Add new card to the UI
-        closeModal(); // Close the modal
+        gameData.author = gameAuthor;
+        games[gameData.title] = gameData;
+        addNewGameCard(gameData);
+        closeModal();
+        applyFilters();  // Reapply filters after adding a new game
       } else {
         alert('Game not found. Please check the name and try again.');
       }

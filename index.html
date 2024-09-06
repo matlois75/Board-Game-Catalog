@@ -4,47 +4,143 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Your Board Game Oasis</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="bg-gradient-radial">
-      <div class="container">
-        <h1 id="your-board-game-oasis" class="animated-title">
+    <div class="parallax-bg"></div>
+
+    <header class="bg-gradient-radial py-16 text-white">
+      <div class="container mx-auto text-center">
+        <h1
+          id="your-board-game-oasis"
+          class="text-4xl md:text-6xl font-bold animate__animated animate__fadeInDown"
+        >
           Your Board Game Oasis
         </h1>
         <p>Organize, Discover, and Play!</p>
-        <button class="btn add-game-btn">Add Game</button>
+        <div class="add-game-container">
+          <button class="btn-primary add-game-btn" onclick="openModal()">
+            Add Game
+          </button>
+        </div>
       </div>
     </header>
 
-    <main class="container" role="main">
-      <section class="animated-section">
-        <h2 id="your-collection">Your Collection</h2>
-        <div id="gameCardContainer" class="game-card-container">
-          <!-- Game cards will be dynamically added here -->
-        </div>
+    <main class="container mx-auto py-16" role="main">
+      <section class="animate__animated animate__fadeIn">
+        <h2 id="your-collection" class="text-3xl font-bold mb-4">
+          Your Collection
+        </h2>
+        <div id="gameCardContainer" class="game-card-container"></div>
       </section>
 
-      <section class="animated-section">
-        <h2 id="find-your-next-game">Find Your Next Game</h2>
-        <div id="filterContainer" class="filter-container">
-          <!-- Filters will be dynamically added here -->
+      <section
+        class="animate__animated animate__fadeIn animate__delay-1s mt-16"
+      >
+        <h2 id="find-your-next-game" class="text-3xl font-bold mb-4">
+          Find Your Next Game
+        </h2>
+        <div id="filterContainer" class="filter-container mb-8">
+          <div class="filter-group">
+            <label for="playerCountFilter" class="filter-label"
+              >Number of Players:</label
+            >
+            <input
+              type="range"
+              id="playerCountFilter"
+              min="1"
+              max="8"
+              value="1"
+              class="slider"
+            />
+            <span id="playerCountValue">1</span>
+          </div>
+          <div class="filter-group">
+            <label for="gameTypeFilter" class="filter-label">Game Types:</label>
+            <div class="dropdown">
+              <button class="dropbtn">Select Game Types</button>
+              <div class="dropdown-content">
+                <label
+                  ><input type="checkbox" name="gameType" value="Strategy" />
+                  Strategy</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Party" />
+                  Party</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Trivia" />
+                  Trivia</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Cooperative" />
+                  Cooperative</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Bluffing" />
+                  Bluffing</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Memory" />
+                  Memory</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="gameType"
+                    value="Civilization"
+                  />
+                  Civilization/Territory</label
+                >
+                <label
+                  ><input type="checkbox" name="gameType" value="Racing" />
+                  Racing</label
+                >
+              </div>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label for="playTimeFilter" class="filter-label">Play Time:</label>
+            <div class="dropdown">
+              <button class="dropbtn">Select Play Time</button>
+              <div class="dropdown-content">
+                <label
+                  ><input type="checkbox" name="playTime" value="Quick" />
+                  Quick</label
+                >
+                <label
+                  ><input type="checkbox" name="playTime" value="Medium" />
+                  Medium</label
+                >
+                <label
+                  ><input type="checkbox" name="playTime" value="Long" />
+                  Long</label
+                >
+              </div>
+            </div>
+          </div>
+          <button id="resetFilters" class="btn-primary">Reset Filters</button>
         </div>
-
-        <div id="gameList" class="game-list">
-          <!-- Game list items will be dynamically added here -->
-        </div>
-
+        <div id="gameList" class="game-list"></div>
         <div class="mt-8 flex justify-center">
-          <button class="btn random-game-btn">Choose for Me</button>
+          <button
+            class="btn-primary choose-for-me-btn"
+            onclick="chooseRandomGame()"
+          >
+            Choose for Me
+          </button>
         </div>
       </section>
     </main>
 
     <div id="gameDetails" class="game-details">
-      <div class="game-details-content">
-        <button class="close-modal-btn" onclick="closeGameDetails()">
-          &times;
+      <div class="game-details-content animate__animated animate__zoomIn">
+        <button class="close-game-details-btn" onclick="closeGameDetails()">
+          ×
         </button>
         <h2 class="game-details-title"></h2>
         <img src="" alt="Game Image" class="game-details-image" />
@@ -71,11 +167,17 @@
     </div>
 
     <div id="addGameModal" class="modal">
-      <div class="modal-dialog">
+      <div class="modal-dialog animate__animated animate__fadeInDown">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Add New Game</h5>
-            <button type="button" class="close-modal-btn">&times;</button>
+            <button
+              type="button"
+              class="close-modal-btn"
+              onclick="closeModal()"
+            >
+              ×
+            </button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -86,11 +188,17 @@
               <label for="gameAuthor">Author:</label>
               <input type="text" id="gameAuthor" class="form-control" />
             </div>
-            <button id="addGameBtn" class="btn">Add Game</button>
+            <button id="addGameBtn" class="btn-primary" onclick="addGame()">
+              Add Game
+            </button>
           </div>
         </div>
       </div>
     </div>
+
+    <footer>
+      <p>&copy; 2024 Your Board Game Oasis. All rights reserved.</p>
+    </footer>
 
     <script src="scripts.js"></script>
   </body>
