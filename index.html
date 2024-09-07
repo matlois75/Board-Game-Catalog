@@ -3,53 +3,93 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cathy's Games</title>
+    <title data-translate="site-title">Cathy's Games</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="language-selector">
+      <div class="selected-language">
+        <img
+          src="images/us-flag.jpg"
+          alt="English"
+          class="flag-icon"
+          id="selectedLanguageFlag"
+        />
+      </div>
+      <div class="language-dropdown">
+        <div class="language-option" data-lang="en">
+          <img src="images/us-flag.jpg" alt="English" class="flag-icon" />
+          <span>English</span>
+        </div>
+        <div class="language-option" data-lang="fr">
+          <img src="images/fr-flag.jpg" alt="Français" class="flag-icon" />
+          <span>Français</span>
+        </div>
+      </div>
+    </div>
+
     <div class="parallax-bg"></div>
 
-    <header class="bg-gradient-radial py-16 text-white">
+    <div class="bg-gradient-radial py-16 text-white">
       <div class="container mx-auto text-center">
         <h1
           id="your-board-game-oasis"
           class="text-4xl md:text-6xl font-bold animate__animated animate__fadeInDown"
+          data-translate="site-title"
         >
           Cathy's Games
         </h1>
-        <p>What will we play?</p>
+        <p class="mt-4" data-translate="what-will-we-play">
+          What will we play?
+        </p>
         <div class="game-management-container">
-          <button class="btn-primary add-game-btn">Add Game</button>
-          <button class="btn-primary remove-game-btn">Remove Game</button>
+          <button class="btn-primary add-game-btn" data-translate="add-game">
+            Add Game
+          </button>
+          <button
+            class="btn-primary remove-game-btn"
+            data-translate="remove-game"
+          >
+            Remove Game
+          </button>
         </div>
       </div>
-    </header>
+    </div>
 
     <main class="container mx-auto py-16" role="main">
       <section class="animate__animated animate__fadeIn">
-        <h2 id="your-collection" class="text-3xl font-bold mb-4">
+        <h2
+          id="your-collection"
+          class="text-3xl font-bold mb-4"
+          data-translate="your-collection"
+        >
           Your Collection
         </h2>
-        <div id="gameCardContainer" class="game-card-container">
-          <!-- Game cards will be dynamically inserted here -->
-        </div>
+        <div id="gameCardContainer" class="game-card-container"></div>
       </section>
 
       <section
         class="animate__animated animate__fadeIn animate__delay-1s mt-16"
       >
-        <h2 id="find-your-next-game" class="text-3xl font-bold mb-4">
+        <h2
+          id="find-your-next-game"
+          class="text-3xl font-bold mb-4"
+          data-translate="find-your-next-game"
+        >
           Find Your Next Game
         </h2>
         <div id="filterContainer" class="filter-container mb-8">
           <div class="filter-group">
-            <label for="playerCountFilter" class="filter-label"
-              >Number of Players: <span id="playerCountValue">1</span></label
-            >
+            <label data-translate="number-of-players">Number of Players:</label>
+            <span id="playerCountValue">1</span>
             <input
               type="range"
               id="playerCountFilter"
@@ -60,9 +100,13 @@
             />
           </div>
           <div class="filter-group">
-            <label class="filter-label">Game Types:</label>
+            <label class="filter-label" data-translate="game-types"
+              >Game Types:</label
+            >
             <div class="dropdown">
-              <button class="dropbtn">Select Game Types</button>
+              <button class="dropbtn" data-translate="select-game-types">
+                Select Game Types
+              </button>
               <div class="dropdown-content">
                 <label
                   ><input type="checkbox" name="gameType" value="Strategy" />
@@ -104,9 +148,13 @@
             </div>
           </div>
           <div class="filter-group">
-            <label class="filter-label">Play Time:</label>
+            <label class="filter-label" data-translate="play-time"
+              >Play Time:</label
+            >
             <div class="dropdown">
-              <button class="dropbtn">Select Play Time</button>
+              <button class="dropbtn" data-translate="select-play-time">
+                Select Play Time
+              </button>
               <div class="dropdown-content">
                 <label
                   ><input type="checkbox" name="playTime" value="Quick" />
@@ -123,13 +171,24 @@
               </div>
             </div>
           </div>
-          <button id="resetFilters" class="btn-primary">Reset Filters</button>
+          <button
+            id="resetFilters"
+            class="btn-primary"
+            data-translate="reset-filters"
+          >
+            Reset Filters
+          </button>
         </div>
         <div id="gameList" class="game-list">
           <!-- Filtered game list will be dynamically inserted here -->
         </div>
         <div class="mt-8 flex justify-center">
-          <button class="btn-primary random-game-btn">RANDOM CHOICE</button>
+          <button
+            class="btn-primary random-game-btn"
+            data-translate="random-choice"
+          >
+            RANDOM CHOICE
+          </button>
         </div>
       </section>
     </main>
@@ -165,16 +224,20 @@
       <div class="modal-dialog animate__animated animate__fadeInDown">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Add New Game</h5>
+            <h5 class="modal-title" data-translate="add-new-game">
+              Add New Game
+            </h5>
             <button type="button" class="close-modal-btn">&times;</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="gameName">Game Name:</label>
+              <label for="gameName" data-translate="game-name"
+                >Game Name:</label
+              >
               <input type="text" id="gameName" class="form-control" required />
             </div>
             <div class="form-group">
-              <label for="gameAuthor">Author:</label>
+              <label for="gameAuthor" data-translate="author">Author:</label>
               <input
                 type="text"
                 id="gameAuthor"
@@ -182,16 +245,25 @@
                 required
               />
             </div>
-            <button id="addGameBtn" class="btn-primary">Add Game</button>
+            <button
+              id="addGameBtn"
+              class="btn-primary"
+              data-translate="add-game"
+            >
+              Add Game
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <footer>
-      <p>&copy; 2024 Cathy's Games. All rights reserved.</p>
+      <p data-translate="footer-text">
+        &copy; 2024 Cathy's Games. All rights reserved.
+      </p>
     </footer>
 
+    <script src="config.js"></script>
     <script src="scripts.js"></script>
   </body>
 </html>
