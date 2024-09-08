@@ -6,6 +6,7 @@ const addGameModal = document.getElementById('addGameModal');
 const removeGameBtn = document.querySelector('.remove-game-btn');
 const addGameBtn = document.querySelector('.add-game-btn');
 const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
+const translationCache = {};
 let isRemoveMode = false;
 let currentLanguage = 'en';
 
@@ -160,7 +161,7 @@ const translations = {
   }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   if (!gameDetails) {
     return;
   }
@@ -241,6 +242,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initial language setup
   switchLanguage(currentLanguage);
+
+  await preloadTranslations();
 });
 
 function loadGameCards(filteredGames = games) {
@@ -255,39 +258,58 @@ async function openGameDetails(event) {
   if (!isRemoveMode) {
     const gameCard = event.target.closest('.game-card');
     if (gameCard) {
-      const gameId = gameCard.dataset.gameTitle;
+      // Show loading indicator
+      gameDetails.classList.add('loading');
+      gameCard.classList.add('loading');
       gameDetails.classList.add('open');
+
+      const gameId = gameCard.dataset.gameTitle;
       const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
       
+      // Preload common translations if not already cached
+      await preloadTranslations();
+
+      // Prepare all translations
+      const [
+        playersLabel,
+        playTimeLabel,
+        translatedPlayTime,
+        categoryLabel,
+        translatedCategories,
+        authorLabel,
+        translatedDescription
+      ] = await Promise.all([
+        translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase()),
+        Promise.all(gameData.category.map(cat => 
+          translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
+        )),
+        translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase()),
+        currentLanguage === 'fr' ? translateText(gameData.description.en, 'FR') : gameData.description.en
+      ]);
+
+      // Update the UI with all translations ready
       gameDetails.querySelector('.game-details-title').textContent = gameData.title[currentLanguage];
       gameDetails.querySelector('.game-details-image').src = gameData.image;
-      gameDetails.querySelector('.game-details-description').textContent = gameData.description[currentLanguage];
+      gameDetails.querySelector('.game-details-description').textContent = translatedDescription;
       
-      // Translate and update player count
-      const playersLabel = await translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase());
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-label').textContent = playersLabel;
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = gameData.playerCount;
       
-      // Translate and update play time
-      const playTimeLabel = await translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase());
-      const translatedPlayTime = await translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase());
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-label').textContent = playTimeLabel;
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = translatedPlayTime;
       
-      // Translate and update category
-      const categoryLabel = await translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase());
-      const translatedCategories = await Promise.all(gameData.category.map(cat => 
-        translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
-      ));
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-label').textContent = categoryLabel;
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = translatedCategories.join(', ');
       
-      // Translate and update author
-      const authorLabel = await translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase());
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
       
-      updateGameDetails();
+      // Hide loading indicator
+      gameDetails.classList.remove('loading');
+      gameCard.classList.remove('loading');
 
       // Prevent the click event from immediately closing the details
       setTimeout(() => {
@@ -700,6 +722,13 @@ function updateRemoveButtonText() {
 }
 
 async function translateText(text, targetLang) {
+  const cacheKey = `${text}-${targetLang}`;
+  
+  // Check if the translation is already in the cache
+  if (translationCache[cacheKey]) {
+    return translationCache[cacheKey];
+  }
+
   const apiUrl = 'https://api-free.deepl.com/v2/translate';
   const sourceLang = 'EN';
   const formData = new URLSearchParams();
@@ -719,9 +748,29 @@ async function translateText(text, targetLang) {
     }
 
     const data = await response.json();
-    return data.translations[0].text;
+    const translatedText = data.translations[0].text;
+
+    // Store the translation in the cache
+    translationCache[cacheKey] = translatedText;
+
+    return translatedText;
   } catch (error) {
     console.error('Translation error:', error);
-    return text; // Return original text if translation fails
+    // In case of an error, return the original text and don't cache
+    return text;
   }
+}
+
+async function preloadTranslations() {
+  const commonTerms = [
+    'players-label', 'play-time-label', 'category-label', 'author-label',
+    'Quick', 'Medium', 'Long', 'Strategy', 'Party', 'Trivia', 'Cooperative', 'Bluffing'
+  ];
+
+  await Promise.all(commonTerms.map(async (term) => {
+    const key = `${term}-${currentLanguage}`;
+    if (!translationCache[key]) {
+      translationCache[key] = await translateText(translations[currentLanguage][term] || term, currentLanguage.toUpperCase());
+    }
+  }));
 }
