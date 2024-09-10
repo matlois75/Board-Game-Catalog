@@ -107,7 +107,20 @@ const translations = {
     "Racing": "Racing",
     "Quick": "Quick",
     "Medium": "Medium",
-    "Long": "Long"
+    "Long": "Long",
+    'game-added-success': 'Game added successfully!',
+    'game-added-with-warning': 'Game added, but there might be some missing information. Please check the game details.',
+    'loading': 'Loading...',
+    'game-added-success': '{gameName} added successfully!',
+    'game-added-with-warning': '{gameName} added successfully, but there was an issue during the process. The game information should be complete, but please check the details.',
+    'game-name-label': 'Game Name:',
+    'loading': 'Loading...',
+    'game-added-success': '{gameName} added successfully!',
+    'game-added-with-warning': '{gameName} added successfully, but there was an issue during the process. The game information should be complete, but please check the details.',
+    'games-per-page': 'Games per page:',
+    'any': 'Any',
+    'select-game-types': 'Select Game Types',
+    'select-play-time': 'Select Play Time'
   },
   fr: {
     "site-title": "Les Jeux de Cathy",
@@ -157,8 +170,32 @@ const translations = {
     "Racing": "Course",
     "Quick": "Rapide",
     "Medium": "Moyen",
-    "Long": "Long"
+    "Long": "Long",
+    'game-added-success': 'Jeu ajouté avec succès!',
+    'game-added-with-warning': 'Jeu ajouté, mais il pourrait manquer certaines informations. Veuillez vérifier les détails du jeu.',
+    'loading': 'Chargement...',
+    'game-added-success': '{gameName} a été ajouté avec succès !',
+    'game-added-with-warning': '{gameName} a été ajouté avec succès, mais il y a eu un problème pendant le processus. Les informations du jeu devraient être complètes, mais veuillez vérifier les détails.',
+    'game-name-label': 'Nom du jeu :',
+    'loading': 'Chargement...',
+    'game-added-success': '{gameName} a été ajouté avec succès !',
+    'game-added-with-warning': '{gameName} a été ajouté avec succès, mais il y a eu un problème pendant le processus. Les informations du jeu devraient être complètes, mais veuillez vérifier les détails.',
+    'games-per-page': 'Jeux par page :',
+    'any': 'Tous',
+    'select-game-types': 'Sélectionner les types de jeux',
+    'select-play-time': 'Sélectionner le temps de jeu'
   }
+};
+
+const categoryMapping = {
+  'Strategy': ['Strategy', 'Abstract Strategy', 'Area Control', 'Economic'],
+  'Party': ['Party', 'Humor', 'Word Game', 'Deduction'],
+  'Trivia': ['Trivia', 'Educational', 'Quiz'],
+  'Cooperative': ['Cooperative', 'Team-Based'],
+  'Bluffing': ['Bluffing', 'Negotiation', 'Deception'],
+  'Memory': ['Memory', 'Pattern Recognition'],
+  'Civilization': ['Civilization', '4X', 'City Building'],
+  'Racing': ['Racing', 'Real-time']
 };
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -166,8 +203,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     return;
   }
 
-  loadGameCards();
   setupFilters();
+  loadGameCards();
+  
 
   document.querySelector('.random-game-btn').addEventListener('click', chooseRandomGame);
   
@@ -247,75 +285,87 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function loadGameCards(filteredGames = games) {
+  const gameEntries = Object.entries(filteredGames);
+  const totalPages = Math.ceil(gameEntries.length / gamesPerPage);
+  const startIndex = (currentPage - 1) * gamesPerPage;
+  const endIndex = startIndex + gamesPerPage;
+  const currentGames = gameEntries.slice(startIndex, endIndex);
+
   gameCardContainer.innerHTML = '';
-  for (const gameTitle in filteredGames) {
-    const game = filteredGames[gameTitle];
+  currentGames.forEach(([_, game]) => {
     addNewGameCard(game);
-  }
+  });
+
+  updatePagination(totalPages);
+  updateRemoveButtons();
 }
 
 async function openGameDetails(event) {
   if (!isRemoveMode) {
-    const gameCard = event.target.closest('.game-card');
-    if (gameCard) {
-      // Show loading indicator
-      gameDetails.classList.add('loading');
-      gameCard.classList.add('loading');
-      gameDetails.classList.add('open');
+      const gameCard = event.target.closest('.game-card');
+      if (gameCard) {
+          // Show loading indicator
+          gameDetails.classList.add('loading');
+          gameCard.classList.add('loading');
+          gameDetails.classList.add('open');
 
-      const gameId = gameCard.dataset.gameTitle;
-      const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
-      
-      // Preload common translations if not already cached
-      await preloadTranslations();
+          const gameId = gameCard.dataset.gameTitle;
+          const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
+          
+          // Preload common translations if not already cached
+          await preloadTranslations();
 
-      // Prepare all translations
-      const [
-        playersLabel,
-        playTimeLabel,
-        translatedPlayTime,
-        categoryLabel,
-        translatedCategories,
-        authorLabel,
-        translatedDescription
-      ] = await Promise.all([
-        translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase()),
-        translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase()),
-        translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase()),
-        translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase()),
-        Promise.all(gameData.category.map(cat => 
-          translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
-        )),
-        translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase()),
-        currentLanguage === 'fr' ? translateText(gameData.description.en, 'FR') : gameData.description.en
-      ]);
+          // Format player count
+          const [minPlayers, maxPlayers] = gameData.playerCount.split('-').map(Number);
+          const playerCountDisplay = minPlayers === maxPlayers ? `${minPlayers}` : gameData.playerCount;
 
-      // Update the UI with all translations ready
-      gameDetails.querySelector('.game-details-title').textContent = gameData.title[currentLanguage];
-      gameDetails.querySelector('.game-details-image').src = gameData.image;
-      gameDetails.querySelector('.game-details-description').textContent = translatedDescription;
-      
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-label').textContent = playersLabel;
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = gameData.playerCount;
-      
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-label').textContent = playTimeLabel;
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = translatedPlayTime;
-      
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-label').textContent = categoryLabel;
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = translatedCategories.join(', ');
-      
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
-      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
-      
-      // Hide loading indicator
-      gameDetails.classList.remove('loading');
-      gameCard.classList.remove('loading');
+          // Prepare all translations
+          const [
+              playersLabel,
+              playTimeLabel,
+              translatedPlayTime,
+              categoryLabel,
+              translatedCategories,
+              authorLabel,
+              translatedDescription
+          ] = await Promise.all([
+              translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase()),
+              translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase()),
+              translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase()),
+              translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase()),
+              Promise.all(gameData.category.map(cat => 
+                  translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
+              )),
+              translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase()),
+              currentLanguage === 'fr' ? translateText(gameData.description.en, 'FR') : gameData.description.en
+          ]);
 
-      // Prevent the click event from immediately closing the details
-      setTimeout(() => {
-        document.addEventListener('click', handleOutsideClick);
-      }, 0);
-    }
+          // Update the UI with all translations ready
+          gameDetails.querySelector('.game-details-title').textContent = gameData.title[currentLanguage];
+          gameDetails.querySelector('.game-details-image').src = gameData.image;
+          gameDetails.querySelector('.game-details-description').textContent = translatedDescription;
+          
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-label').textContent = playersLabel;
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = playerCountDisplay;
+          
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-label').textContent = playTimeLabel;
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = translatedPlayTime;
+          
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-label').textContent = categoryLabel;
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = translatedCategories.join(', ');
+          
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
+          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
+          
+          // Hide loading indicator
+          gameDetails.classList.remove('loading');
+          gameCard.classList.remove('loading');
+
+          // Prevent the click event from immediately closing the details
+          setTimeout(() => {
+              document.addEventListener('click', handleOutsideClick);
+          }, 0);
+      }
   }
 }
 
@@ -338,21 +388,25 @@ function handleGameDetailsClick(event) {
 }
 
 function addNewGameCard(gameData) {
+  const [minPlayers, maxPlayers] = gameData.playerCount.split('-').map(Number);
+  const playerCountDisplay = minPlayers === maxPlayers ? `${minPlayers}` : gameData.playerCount;
+
   const newGameCard = `
-    <div class="game-card" data-game-title="${gameData.title[currentLanguage]}">
-      <img src="${gameData.image}" alt="${gameData.title[currentLanguage]}" class="w-full h-48 object-cover rounded-md">
-      <div class="card-content px-4 py-2 rounded-b-md bg-gray-800 opacity-75">
-        <h3 class="card-title text-white font-bold">${gameData.title[currentLanguage]}</h3>
-        <div class="tags">
-          ${gameData.category.map(cat => `<span class="tag">${translations[currentLanguage][cat] || cat}</span>`).join('')}
-          <span class="tag">${gameData.playerCount} ${translations[currentLanguage]['players']}</span>
-          <span class="tag">${translations[currentLanguage][gameData.playTime] || gameData.playTime}</span>
-        </div>
+      <div class="game-card" data-game-title="${gameData.title[currentLanguage]}">
+          <img src="${gameData.image}" alt="${gameData.title[currentLanguage]}" class="w-full h-48 object-cover rounded-md">
+          <div class="card-content px-4 py-2 rounded-b-md bg-gray-800 opacity-75">
+              <h3 class="card-title text-white font-bold">${gameData.title[currentLanguage]}</h3>
+              <div class="tags">
+                  ${gameData.category.map(cat => `<span class="tag">${translations[currentLanguage][cat] || cat}</span>`).join('')}
+                  ${gameData.originalCategory ? `<span class="tag original-category">${gameData.originalCategory[currentLanguage]}</span>` : ''}
+                  <span class="tag">${playerCountDisplay} ${translations[currentLanguage]['players']}</span>
+                  <span class="tag">${translations[currentLanguage][gameData.playTime] || gameData.playTime}</span>
+              </div>
+          </div>
+          <button class="remove-button" data-game-title="${gameData.title[currentLanguage]}">-</button>
       </div>
-      <button class="remove-button" data-game-title="${gameData.title[currentLanguage]}">-</button>
-    </div>
   `;
-  gameCardContainer.innerHTML += newGameCard;
+  gameCardContainer.insertAdjacentHTML('beforeend', newGameCard);
 }
 
 function setupFilters() {
@@ -363,9 +417,11 @@ function setupFilters() {
   const resetFiltersBtn = document.getElementById('resetFilters');
 
   playerCountFilter.addEventListener('input', function() {
-    playerCountValue.textContent = this.value === '8' ? '8+' : this.value;
+    updatePlayerCountDisplay(this.value);
     applyFilters();
-  });
+});
+
+  updatePlayerCountDisplay(playerCountFilter.value);
 
   gameTypeCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', applyFilters);
@@ -399,128 +455,219 @@ function setupFilters() {
     label.textContent = translatedText;
     label.insertBefore(checkbox, label.firstChild);
   });
+
+  const gamesPerPageSelect = document.getElementById('gamesPerPage');
+  gamesPerPageSelect.addEventListener('change', updateGamesPerPage);
+
+  applyFilters();
+}
+
+function updatePlayerCountDisplay(value) {
+  const playerCountValue = document.getElementById('playerCountValue');
+  const intValue = parseInt(value);
+  if (intValue === 0) {
+      playerCountValue.textContent = translations[currentLanguage]['any'];
+  } else if (intValue === 8) {
+      playerCountValue.textContent = '8+';
+  } else {
+      playerCountValue.textContent = intValue;
+  }
 }
 
 function applyFilters() {
-  const playerCount = document.getElementById('playerCountFilter').value;
+  const playerCount = parseInt(document.getElementById('playerCountFilter').value);
   const selectedGameTypes = Array.from(document.querySelectorAll('input[name="gameType"]:checked')).map(cb => cb.value);
   const selectedPlayTimes = Array.from(document.querySelectorAll('input[name="playTime"]:checked')).map(cb => cb.value);
 
   const filteredGames = Object.fromEntries(
-    Object.entries(games).filter(([_, game]) => {
-      const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
-      const meetsPlayerCount = playerCount <= maxPlayers && (playerCount >= minPlayers || maxPlayers === '+');
-      const meetsGameType = selectedGameTypes.length === 0 || game.category.some(cat => selectedGameTypes.includes(cat));
-      const meetsPlayTime = selectedPlayTimes.length === 0 || selectedPlayTimes.includes(game.playTime);
+      Object.entries(games).filter(([_, game]) => {
+          const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
+          const meetsPlayerCount = playerCount === 0 || (playerCount >= minPlayers && (playerCount <= maxPlayers || maxPlayers === '+'));
+          const meetsGameType = selectedGameTypes.length === 0 || game.category.some(cat => selectedGameTypes.includes(cat));
+          const meetsPlayTime = selectedPlayTimes.length === 0 || selectedPlayTimes.includes(game.playTime);
 
-      return meetsPlayerCount && meetsGameType && meetsPlayTime;
-    })
+          return meetsPlayerCount && meetsGameType && meetsPlayTime;
+      })
   );
 
+  currentPage = 1;
   loadGameCards(filteredGames);
 }
 
 function resetFilters() {
-  document.getElementById('playerCountFilter').value = 1;
-  document.getElementById('playerCountValue').textContent = '1';
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  const playerCountFilter = document.getElementById('playerCountFilter');
+  playerCountFilter.value = 0;
+  updatePlayerCountDisplay(playerCountFilter.value);
+
+  document.querySelectorAll('input[name="gameType"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('input[name="playTime"]').forEach(cb => cb.checked = false);
+  document.querySelector('[data-translate="select-game-types"]').textContent = translations[currentLanguage]['select-game-types'];
+  document.querySelector('[data-translate="select-play-time"]').textContent = translations[currentLanguage]['select-play-time'];
+
+  applyFilters();
   loadGameCards();
+  updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+  const gameCards = gameCardContainer.querySelectorAll('.game-card');
+  gameCards.forEach(card => {
+    card.classList.toggle('remove-mode', isRemoveMode);
+    const removeButton = card.querySelector('.remove-button');
+    if (removeButton) {
+      removeButton.style.display = isRemoveMode ? 'block' : 'none';
+    }
+  });
 }
 
 function chooseRandomGame() {
   const gameCards = gameCardContainer.querySelectorAll('.game-card');
   if (gameCards.length > 0) {
     const randomIndex = Math.floor(Math.random() * gameCards.length);
-    gameCards[randomIndex].click();
+    const randomGame = gameCards[randomIndex];
+    openGameDetails({ target: randomGame });
   }
 }
 
-async function fetchGameInfo(gameName) {
-  const apiUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(gameName)}&type=boardgame`;
+async function fetchGameInfo(gameId) {
+  const apiUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${gameId}`;
 
   try {
+    console.log('Fetching game info from BGG API:', apiUrl);
     const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const xmlText = await response.text();
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, "text/xml");
 
-    const items = xmlDoc.getElementsByTagName('item');
-    if (items.length > 0) {
-      // Find the closest match
-      let closestMatch = items[0];
-      let closestScore = 0;
-      
-      for (let i = 0; i < items.length; i++) {
-        const name = items[i].querySelector('name').getAttribute('value');
-        const score = calculateSimilarity(gameName.toLowerCase(), name.toLowerCase());
-        
-        if (score > closestScore) {
-          closestMatch = items[i];
-          closestScore = score;
-        }
-      }
-
-      const gameId = closestMatch.getAttribute('id');
-      const gameData = await fetchGameDetails(gameId);
-    
-      // Translate the game data if the current language is French
-      if (currentLanguage === 'fr') {
-        try {
-          gameData.title.fr = await translateText(gameData.title.en, 'FR');
-          gameData.description.fr = await translateText(gameData.description.en, 'FR');
-        } catch (error) {
-          console.error('Translation error:', error);
-          gameData.title.fr = gameData.title.en;
-          gameData.description.fr = gameData.description.en;
-        }
-      } else {
-        gameData.title.fr = gameData.title.en;
-        gameData.description.fr = gameData.description.en;
-      }
-    
-      return gameData;
+    const name = xmlDoc.querySelector('name[type="primary"]')?.getAttribute('value');
+    if (!name) {
+      throw new Error('Game name not found in API response');
     }
-    return null;
+
+    const description = xmlDoc.querySelector('description')?.textContent || 'No description available.';
+    const minPlayers = xmlDoc.querySelector('minplayers')?.getAttribute('value');
+    const maxPlayers = xmlDoc.querySelector('maxplayers')?.getAttribute('value');
+    const playingTime = parseInt(xmlDoc.querySelector('playingtime')?.getAttribute('value') || '0');
+    const category = xmlDoc.querySelector('link[type="boardgamecategory"]')?.getAttribute('value') || 'Unknown';
+    const mappedCategory = mapCategory(category);
+    const imageUrl = xmlDoc.querySelector('image')?.textContent || './images/placeholder.jpg';
+    const author = xmlDoc.querySelector('link[type="boardgamedesigner"]')?.getAttribute('value') || 'Unknown';
+
+    let translatedCategory = category;
+    if (currentLanguage === 'fr') {
+        try {
+            translatedCategory = await translateText(category, 'FR');
+        } catch (error) {
+            console.error('Error translating category:', error);
+            // If translation fails, we'll use the original category
+        }
+    }
+
+    if (playingTime <= 30) {
+      playTimeCategory = 'Quick';
+    } else if (playingTime <= 60) {
+      playTimeCategory = 'Medium';
+    } else {
+      playTimeCategory = 'Long';
+    }
+
+    const gameData = {
+      title: {
+        en: name,
+        fr: name // Will be translated later if needed
+      },
+      image: imageUrl,
+      description: {
+        en: description,
+        fr: description // Will be translated later if needed
+      },
+      playerCount: `${minPlayers}-${maxPlayers}`,
+      playTime: playTimeCategory,
+      category: [mappedCategory],
+      originalCategory: {
+          en: category,
+          fr: translatedCategory
+      },
+      author: author
+    };
+
+    console.log('Parsed game data:', gameData);
+    return gameData;
   } catch (error) {
-    console.error('Error fetching game info:', error);
-    return null;
+    console.error('Error in fetchGameInfo:', error);
+    throw error; // Re-throw the error to be caught in addGame
   }
 }
 
 async function addGame() {
-  const gameName = document.getElementById('gameName').value;
-  const gameAuthor = document.getElementById('gameAuthor').value;
+  const gameName = gameNameInput.value;
+  const gameId = gameNameInput.dataset.id;
 
-  if (gameName && gameAuthor) {
+  if (gameName && gameId) {
+    // Show loading indicator
+    const addButton = document.getElementById('addGameBtn');
+    const originalButtonText = addButton.textContent;
+    addButton.textContent = translations[currentLanguage]['loading'] || 'Loading...';
+    addButton.disabled = true;
+
     try {
-      const gameData = await fetchGameInfo(gameName);
+      console.log('Fetching game info for:', gameName, 'with ID:', gameId);
+      const gameData = await fetchGameInfo(gameId);
+      
       if (gameData) {
-        gameData.author = gameAuthor;
+        console.log('Game data fetched successfully:', gameData);
         
-        // Translate the author name if the current language is French
         if (currentLanguage === 'fr') {
           try {
+            console.log('Translating game data to French');
+            gameData.title.fr = await translateText(gameData.title.en, 'FR');
+            gameData.description.fr = await translateText(gameData.description.en, 'FR');
             gameData.author = await translateText(gameData.author, 'FR');
           } catch (error) {
-            console.error('Author translation error:', error);
-            // Fallback to original author name if translation fails
+            console.error('Translation error:', error);
+            // Continue with untranslated data if translation fails
           }
         }
         
         games[gameData.title.en] = gameData;
         addNewGameCard(gameData);
+        
+        console.log('Game added successfully:', gameData.title.en);
+        showNotification(translations[currentLanguage]['game-added-success'].replace('{gameName}', gameData.title[currentLanguage]));
+        
         closeModal();
         applyFilters();
       } else {
-        alert(translations[currentLanguage]['game-not-found'] || 'Game not found. Please check the name and try again.');
+        throw new Error('Game data not found');
       }
     } catch (error) {
-      console.error('Error adding game:', error);
-      alert(translations[currentLanguage]['fetch-error'] || 'An error occurred while fetching game data. Please try again.');
+      console.error('Error in addGame function:', error);
+      
+      // Check if the game was actually added despite the error
+      if (games[gameName] || Object.values(games).some(game => game.title.en === gameName)) {
+        console.log('Game was added despite error:', gameName);
+        showNotification(translations[currentLanguage]['game-added-with-warning'].replace('{gameName}', gameName));
+        closeModal();
+        applyFilters();
+      } else {
+        console.log('Game was not added:', gameName);
+        showNotification(translations[currentLanguage]['fetch-error'], 5000);
+      }
+    } finally {
+      // Reset button state
+      addButton.textContent = originalButtonText;
+      addButton.disabled = false;
     }
   } else {
-    alert(translations[currentLanguage]['incomplete-info'] || 'Please enter both the game name and author.');
+    showNotification(translations[currentLanguage]['incomplete-info'], 5000);
   }
+  currentPage = 1;
+  loadGameCards();
 }
 
 function calculateSimilarity(s1, s2) {
@@ -625,26 +772,35 @@ function handleOutsideModalClick(event) {
 }
 
 function closeModal() {
-  addGameModal.style.display = 'none';
+  const addGameModal = document.getElementById('addGameModal');
+  if (addGameModal) {
+    addGameModal.style.display = 'none';
+  }
+  
   // Remove the event listener when closing the modal
   document.removeEventListener('click', handleOutsideModalClick);
+  
   // Clear input fields
-  document.getElementById('gameName').value = '';
-  document.getElementById('gameAuthor').value = '';
+  const gameNameInput = document.getElementById('gameName');
+  if (gameNameInput) {
+    gameNameInput.value = '';
+    delete gameNameInput.dataset.id;
+  }
+  
+  // Clear autocomplete results
+  const autocompleteResults = document.getElementById('autocompleteResults');
+  if (autocompleteResults) {
+    autocompleteResults.innerHTML = '';
+  }
 }
 
 function toggleRemoveMode() {
   isRemoveMode = !isRemoveMode;
   gameCardContainer.classList.toggle('remove-mode', isRemoveMode);
   updateRemoveButtonText();
-
-  const gameCards = gameCardContainer.querySelectorAll('.game-card');
-  gameCards.forEach(card => {
-    card.classList.toggle('remove-mode', isRemoveMode);
-  });
+  updateRemoveButtons();
 
   if (isRemoveMode) {
-    // Add event listener to the container, not individual cards
     gameCardContainer.addEventListener('click', handleRemoveGame);
   } else {
     gameCardContainer.removeEventListener('click', handleRemoveGame);
@@ -655,11 +811,12 @@ function handleRemoveGame(event) {
   const removeButton = event.target.closest('.remove-button');
   if (removeButton && isRemoveMode) {
     event.stopPropagation(); // Prevent opening game details
-    const gameTitle = removeButton.dataset.gameTitle;
+    const gameCard = removeButton.closest('.game-card');
+    const gameTitle = gameCard.dataset.gameTitle;
     
     // Find the game in the games object using the title in both languages
     const gameToRemove = Object.values(games).find(game => 
-      game.title.en === gameTitle || game.title.fr === gameTitle
+      game.title[currentLanguage] === gameTitle || game.title.en === gameTitle
     );
 
     if (gameToRemove) {
@@ -667,8 +824,10 @@ function handleRemoveGame(event) {
       delete games[gameToRemove.title.en];
       
       // Remove the game card from the DOM
-      const gameCard = removeButton.closest('.game-card');
       gameCard.remove();
+
+      // Refresh the game cards to update the layout
+      applyFilters();
     }
   }
 }
@@ -680,6 +839,8 @@ function switchLanguage(lang) {
     if (translations[lang][key]) {
       if (element.tagName === 'INPUT' && element.type === 'text') {
         element.placeholder = translations[lang][key];
+      } else if (element.tagName === 'LABEL') {
+        element.textContent = translations[lang][key];
       } else {
         element.textContent = translations[lang][key];
       }
@@ -694,9 +855,12 @@ function switchLanguage(lang) {
   // Update dynamic content
   document.title = translations[lang]['site-title'];
   loadGameCards(games);
-  setupFilters(); // Call setupFilters here to update the filter options
+  setupFilters();
   updateRemoveButtonText();
   updateGameDetails();
+
+  const playerCountFilter = document.getElementById('playerCountFilter');
+  updatePlayerCountDisplay(playerCountFilter.value);
 
   // Save language preference
   localStorage.setItem('language', lang);
@@ -726,7 +890,12 @@ async function translateText(text, targetLang) {
   
   // Check if the translation is already in the cache
   if (translationCache[cacheKey]) {
-    return translationCache[cacheKey];
+      return translationCache[cacheKey];
+  }
+
+  // If the text is already in the target language, return it as is
+  if (targetLang.toUpperCase() === 'EN' && !containsNonLatinCharacters(text)) {
+      return text;
   }
 
   const apiUrl = 'https://api-free.deepl.com/v2/translate';
@@ -738,27 +907,32 @@ async function translateText(text, targetLang) {
   formData.append('target_lang', targetLang.toUpperCase());
 
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    const data = await response.json();
-    const translatedText = data.translations[0].text;
+      const data = await response.json();
+      const translatedText = data.translations[0].text;
 
-    // Store the translation in the cache
-    translationCache[cacheKey] = translatedText;
+      // Store the translation in the cache
+      translationCache[cacheKey] = translatedText;
 
-    return translatedText;
+      return translatedText;
   } catch (error) {
-    console.error('Translation error:', error);
-    // In case of an error, return the original text and don't cache
-    return text;
+      console.error('Translation error:', error);
+      // In case of an error, return the original text and don't cache
+      return text;
   }
+}
+
+// Helper function to check if a string contains non-Latin characters
+function containsNonLatinCharacters(text) {
+  return /[^\u0000-\u007F]/.test(text);
 }
 
 async function preloadTranslations() {
@@ -773,4 +947,134 @@ async function preloadTranslations() {
       translationCache[key] = await translateText(translations[currentLanguage][term] || term, currentLanguage.toUpperCase());
     }
   }));
+}
+
+let autocompleteTimeout;
+const autocompleteResults = document.getElementById('autocompleteResults');
+const gameNameInput = document.getElementById('gameName');
+
+gameNameInput.addEventListener('input', handleAutocomplete);
+autocompleteResults.addEventListener('click', handleAutocompleteSelection);
+
+function handleAutocomplete() {
+    clearTimeout(autocompleteTimeout);
+    const query = gameNameInput.value.trim();
+    
+    if (query.length < 3) {
+        autocompleteResults.innerHTML = '';
+        return;
+    }
+
+    autocompleteTimeout = setTimeout(() => {
+        fetchAutocompleteResults(query);
+    }, 300);
+}
+
+async function fetchAutocompleteResults(query) {
+    const apiUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(query)}&type=boardgame`;
+
+    try {
+        const response = await fetch(apiUrl);
+        const xmlText = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+        const items = xmlDoc.getElementsByTagName('item');
+        const results = Array.from(items).slice(0, 5).map(item => {
+            const name = item.querySelector('name').getAttribute('value');
+            const yearPublished = item.querySelector('yearpublished')?.getAttribute('value') || 'N/A';
+            const id = item.getAttribute('id');
+            return { name, yearPublished, id };
+        });
+
+        displayAutocompleteResults(results);
+    } catch (error) {
+        console.error('Error fetching autocomplete results:', error);
+    }
+}
+
+function displayAutocompleteResults(results) {
+    autocompleteResults.innerHTML = '';
+    results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.textContent = `${result.name} (${result.yearPublished})`;
+        div.dataset.id = result.id;
+        div.addEventListener('click', () => selectAutocompleteItem(result.name, result.id));
+        autocompleteResults.appendChild(div);
+    });
+}
+
+function handleAutocompleteSelection(event) {
+    if (event.target.classList.contains('autocomplete-item')) {
+        const name = event.target.textContent.split(' (')[0];
+        const id = event.target.dataset.id;
+        selectAutocompleteItem(name, id);
+    }
+}
+
+function selectAutocompleteItem(name, id) {
+    gameNameInput.value = name;
+    gameNameInput.dataset.id = id;
+    autocompleteResults.innerHTML = '';
+}
+
+function showNotification(message, duration = 3000) {
+  const notification = document.getElementById('notification');
+  const notificationMessage = document.getElementById('notificationMessage');
+  
+  notificationMessage.textContent = message;
+  notification.classList.remove('hidden');
+  
+  setTimeout(() => {
+      notification.classList.add('hidden');
+  }, duration);
+}
+
+let currentPage = 1;
+let gamesPerPage = 8;
+
+function updateGamesPerPage() {
+    gamesPerPage = parseInt(document.getElementById('gamesPerPage').value);
+    currentPage = 1;
+    loadGameCards();
+}
+
+function updatePagination(totalPages) {
+  const paginationContainer = document.getElementById('pagination');
+  paginationContainer.innerHTML = '';
+
+  const prevButton = document.createElement('button');
+  prevButton.textContent = 'Previous';
+  prevButton.addEventListener('click', () => changePage(currentPage - 1));
+  prevButton.disabled = currentPage === 1;
+  paginationContainer.appendChild(prevButton);
+
+  for (let i = 1; i <= totalPages; i++) {
+      const pageButton = document.createElement('button');
+      pageButton.textContent = i;
+      pageButton.addEventListener('click', () => changePage(i));
+      pageButton.disabled = currentPage === i;
+      paginationContainer.appendChild(pageButton);
+  }
+
+  const nextButton = document.createElement('button');
+  nextButton.textContent = 'Next';
+  nextButton.addEventListener('click', () => changePage(currentPage + 1));
+  nextButton.disabled = currentPage === totalPages;
+  paginationContainer.appendChild(nextButton);
+}
+
+function changePage(newPage) {
+  currentPage = newPage;
+  loadGameCards();
+}
+
+function mapCategory(externalCategory) {
+  for (const [internalCategory, externalCategories] of Object.entries(categoryMapping)) {
+      if (externalCategories.some(cat => externalCategory.toLowerCase().includes(cat.toLowerCase()))) {
+          return internalCategory;
+      }
+  }
+  return 'Other';  // Default category if no match is found
 }

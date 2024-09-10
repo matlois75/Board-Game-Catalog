@@ -55,6 +55,8 @@ main.container {
 }
 
 .game-card-container {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 30px;
@@ -122,26 +124,37 @@ main.container {
 }
 
 .filter-container {
+    position: relative;
+    z-index: 10;
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     margin-bottom: 30px;
-    padding: 30px;
+    padding: 20px;
     background-color: var(--card-background);
     border-radius: 15px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    align-items: flex-start;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
     min-width: 200px;
+    flex: 1;
 }
 
 .filter-label {
     font-weight: bold;
     margin-bottom: 10px;
     color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .slider {
@@ -157,6 +170,17 @@ main.container {
 
 .slider:hover {
     opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .slider::-webkit-slider-thumb {
@@ -187,16 +211,19 @@ main.container {
 .dropdown {
     position: relative;
     display: inline-block;
+    width: 100%;
 }
 
 .dropbtn {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 12px 20px;
-    font-size: 16px;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    background-color: var(--accent-color);
+    color: var(--primary-color);
     border: none;
+    border-radius: 5px;
     cursor: pointer;
-    border-radius: 25px;
+    font-size: 1rem;
     transition: background-color 0.3s ease;
 }
 
@@ -207,16 +234,13 @@ main.container {
 .dropdown-content {
     display: none;
     position: absolute;
+    z-index: 12;
+    width: 100%;
     background-color: var(--card-background);
-    min-width: 200px;
-    max-height: 300px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 5px;
+    max-height: 200px;
     overflow-y: auto;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    border-radius: 10px;
-    padding: 15px;
-    bottom: 100%;
-    left: 0;
 }
 
 .dropdown:hover .dropdown-content,
@@ -226,8 +250,9 @@ main.container {
 
 .dropdown-content label {
     display: block;
-    padding: 10px 0;
+    padding: 10px 15px;
     transition: background-color 0.3s ease;
+    font-size: 0.9rem;
 }
 
 .dropdown-content label:hover {
@@ -240,6 +265,25 @@ main.container {
 
 #resetFilters {
     align-self: flex-end;
+    margin-top: 20px;
+    white-space: nowrap;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+#resetFilters:hover {
+    background-color: var(--secondary-color);
+}
+
+#playerCountValue {
+    min-width: 30px;
+    text-align: center;
 }
 
 .btn-primary {
@@ -484,6 +528,9 @@ footer {
     padding: 1.5rem 0;
     margin-top: auto;
     width: 100%;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
 
 .language-selector {
@@ -535,6 +582,97 @@ footer {
     margin-right: 10px;
 }
 
+.random-game-btn {
+    margin-bottom: 30px;
+}
+
+.autocomplete-results {
+    position: absolute;
+    background-color: white;
+    border: 1px solid var(--accent-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.autocomplete-item:hover {
+    background-color: var(--accent-color);
+}
+
+.form-group {
+    position: relative;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.notification.hidden {
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+}
+
+.games-per-page-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#gamesPerPage {
+    width: auto;
+    padding: 5px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 2rem;
+}
+
+.pagination button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.pagination button:hover {
+    background-color: var(--secondary-color);
+}
+
+.pagination button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.tag.original-category {
+    background-color: var(--secondary-color);
+    font-style: italic;
+}
 
 @media (max-width: 768px) {
     .container {
@@ -573,6 +711,16 @@ footer {
     .dropdown-content {
         position: static;
         max-height: none;
+    }
+
+    #resetFilters {
+        align-self: center;
+        margin-top: 20px;
+    }
+
+    .games-per-page-container {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
@@ -618,3 +766,30 @@ footer {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
   }
+
+  .autocomplete-results {
+  position: absolute;
+  background-color: white;
+  border: 1px solid var(--accent-color);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.autocomplete-item {
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--accent-color);
+}
+
+.form-group {
+  position: relative;
+}

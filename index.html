@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-translate="site-title">Cathy's Games</title>
+    <title>Cathy's Games</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="styles.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
     />
-    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="language-selector">
@@ -20,18 +20,18 @@
         <img
           src="images/us-flag.jpg"
           alt="English"
-          class="flag-icon"
           id="selectedLanguageFlag"
+          class="flag-icon"
         />
       </div>
       <div class="language-dropdown">
         <div class="language-option" data-lang="en">
           <img src="images/us-flag.jpg" alt="English" class="flag-icon" />
-          <span>English</span>
+          English
         </div>
         <div class="language-option" data-lang="fr">
           <img src="images/fr-flag.jpg" alt="Français" class="flag-icon" />
-          <span>Français</span>
+          Français
         </div>
       </div>
     </div>
@@ -47,9 +47,7 @@
         >
           Cathy's Games
         </h1>
-        <p class="mt-4" data-translate="what-will-we-play">
-          What will we play?
-        </p>
+        <p data-translate="what-will-we-play">What will we play?</p>
         <div class="game-management-container">
           <button class="btn-primary add-game-btn" data-translate="add-game">
             Add Game
@@ -64,21 +62,8 @@
       </div>
     </div>
 
-    <main class="container mx-auto py-16" role="main">
+    <div class="container mx-auto py-16" role="main">
       <section class="animate__animated animate__fadeIn">
-        <h2
-          id="your-collection"
-          class="text-3xl font-bold mb-4"
-          data-translate="your-collection"
-        >
-          Your Collection
-        </h2>
-        <div id="gameCardContainer" class="game-card-container"></div>
-      </section>
-
-      <section
-        class="animate__animated animate__fadeIn animate__delay-1s mt-16"
-      >
         <h2
           id="find-your-next-game"
           class="text-3xl font-bold mb-4"
@@ -86,19 +71,29 @@
         >
           Find Your Next Game
         </h2>
+
         <div id="filterContainer" class="filter-container mb-8">
           <div class="filter-group">
-            <label data-translate="number-of-players">Number of Players:</label>
-            <span id="playerCountValue">1</span>
-            <input
-              type="range"
-              id="playerCountFilter"
-              min="1"
-              max="8"
-              value="1"
-              class="slider"
-            />
+            <label
+              for="playerCountFilter"
+              class="filter-label"
+              data-translate="number-of-players"
+              >Number of Players:</label
+            >
+            <div class="slider-container">
+              <input
+                type="range"
+                id="playerCountFilter"
+                class="slider"
+                min="0"
+                max="8"
+                value="0"
+                step="1"
+              />
+              <span id="playerCountValue">Any</span>
+            </div>
           </div>
+
           <div class="filter-group">
             <label class="filter-label" data-translate="game-types"
               >Game Types:</label
@@ -147,6 +142,7 @@
               </div>
             </div>
           </div>
+
           <div class="filter-group">
             <label class="filter-label" data-translate="play-time"
               >Play Time:</label
@@ -171,17 +167,12 @@
               </div>
             </div>
           </div>
-          <button
-            id="resetFilters"
-            class="btn-primary"
-            data-translate="reset-filters"
-          >
+
+          <button id="resetFilters" data-translate="reset-filters">
             Reset Filters
           </button>
         </div>
-        <div id="gameList" class="game-list">
-          <!-- Filtered game list will be dynamically inserted here -->
-        </div>
+
         <div class="mt-8 flex justify-center">
           <button
             class="btn-primary random-game-btn"
@@ -191,7 +182,36 @@
           </button>
         </div>
       </section>
-    </main>
+
+      <section class="animate__animated animate__fadeIn mt-16">
+        <h2
+          id="your-collection"
+          class="text-3xl font-bold mb-4"
+          data-translate="your-collection"
+        >
+          Your Collection
+        </h2>
+
+        <div class="games-per-page-container mb-4">
+          <label for="gamesPerPage" data-translate="games-per-page"
+            >Games per page:</label
+          >
+          <select id="gamesPerPage" class="form-control">
+            <option value="8">8</option>
+            <option value="20">20</option>
+            <option value="40">40</option>
+          </select>
+        </div>
+
+        <div id="gameCardContainer" class="game-card-container">
+          <!-- Game cards will be dynamically added here -->
+        </div>
+
+        <div id="pagination" class="pagination mt-8">
+          <!-- Pagination controls will be dynamically added here -->
+        </div>
+      </section>
+    </div>
 
     <div id="gameDetails" class="game-details">
       <div class="game-details-content animate__animated animate__zoomIn">
@@ -201,19 +221,31 @@
         <p class="game-details-description"></p>
         <div class="game-details-info">
           <div class="game-details-info-item">
-            <span class="game-details-info-label">Players:</span>
+            <span class="game-details-info-label" data-translate="players-label"
+              >Players:</span
+            >
             <span class="game-details-info-value"></span>
           </div>
           <div class="game-details-info-item">
-            <span class="game-details-info-label">Play Time:</span>
+            <span
+              class="game-details-info-label"
+              data-translate="play-time-label"
+              >Play Time:</span
+            >
             <span class="game-details-info-value"></span>
           </div>
           <div class="game-details-info-item">
-            <span class="game-details-info-label">Category:</span>
+            <span
+              class="game-details-info-label"
+              data-translate="category-label"
+              >Category:</span
+            >
             <span class="game-details-info-value"></span>
           </div>
           <div class="game-details-info-item">
-            <span class="game-details-info-label">Author:</span>
+            <span class="game-details-info-label" data-translate="author-label"
+              >Author:</span
+            >
             <span class="game-details-info-value"></span>
           </div>
         </div>
@@ -231,19 +263,16 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="gameName" data-translate="game-name"
+              <label for="gameName" data-translate="game-name-label"
                 >Game Name:</label
               >
-              <input type="text" id="gameName" class="form-control" required />
-            </div>
-            <div class="form-group">
-              <label for="gameAuthor" data-translate="author">Author:</label>
               <input
                 type="text"
-                id="gameAuthor"
+                id="gameName"
                 class="form-control"
-                required
+                autocomplete="off"
               />
+              <div id="autocompleteResults" class="autocomplete-results"></div>
             </div>
             <button
               id="addGameBtn"
@@ -257,9 +286,13 @@
       </div>
     </div>
 
-    <footer>
+    <div id="notification" class="notification hidden">
+      <span id="notificationMessage"></span>
+    </div>
+
+    <footer class="mt-16">
       <p data-translate="footer-text">
-        &copy; 2024 Cathy's Games. All rights reserved.
+        © 2024 Cathy's Games. All rights reserved.
       </p>
     </footer>
 
