@@ -9,6 +9,7 @@ const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
 const translationCache = {};
 let isRemoveMode = false;
 let currentLanguage = 'en';
+let isAuthenticated = false;
 
 const games = {
   "Azul": {
@@ -120,7 +121,15 @@ const translations = {
     'games-per-page': 'Games per page:',
     'any': 'Any',
     'select-game-types': 'Select Game Types',
-    'select-play-time': 'Select Play Time'
+    'select-play-time': 'Select Play Time',
+    "enter-password": "Enter Password",
+    "password-placeholder": "Enter password",
+    "submit": "Submit",
+    "incorrect-password": "Incorrect password. Please try again.",
+    "add-new-game": "Add New Game",
+    "game-name-label": "Game Name:",
+    "game-name-placeholder": "Enter game name",
+    "add-game-button": "Add Game"
   },
   fr: {
     "site-title": "Les Jeux de Cathy",
@@ -183,7 +192,15 @@ const translations = {
     'games-per-page': 'Jeux par page :',
     'any': 'Tous',
     'select-game-types': 'Sélectionner les types de jeux',
-    'select-play-time': 'Sélectionner le temps de jeu'
+    'select-play-time': 'Sélectionner le temps de jeu',
+    "enter-password": "Entrez le mot de passe",
+    "password-placeholder": "Entrez le mot de passe",
+    "submit": "Soumettre",
+    "incorrect-password": "Mot de passe incorrect. Veuillez réessayer.",
+    "add-new-game": "Ajouter un nouveau jeu",
+    "game-name-label": "Nom du jeu :",
+    "game-name-placeholder": "Entrez le nom du jeu",
+    "add-game-button": "Ajouter le jeu"
   }
 };
 
@@ -205,11 +222,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   setupFilters();
   loadGameCards();
-  
 
   document.querySelector('.random-game-btn').addEventListener('click', chooseRandomGame);
   
-  const addGameBtn = document.querySelector('.add-game-btn');
   if (addGameBtn) {
     addGameBtn.addEventListener('click', openModal);
   }
@@ -219,12 +234,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     addGameModalBtn.addEventListener('click', addGame);
   }
 
-  const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', closeModal);
   }
 
-  // Update this event listener
   document.addEventListener('click', handleGameDetailsClick);
   
   const closeGameDetailsBtn = gameDetails.querySelector('.close-game-details-btn');
@@ -234,14 +247,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   if (removeGameBtn) {
     removeGameBtn.addEventListener('click', toggleRemoveMode);
-  }
-
-  if (addGameBtn) {
-    addGameBtn.addEventListener('click', openModal);
-  }
-
-  if (closeModalBtn) {
-      closeModalBtn.addEventListener('click', closeModal);
   }
 
   const languageSelector = document.querySelector('.language-selector');
@@ -260,7 +265,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   });
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', (event) => {
     if (!languageSelector.contains(event.target)) {
       languageDropdown.style.display = 'none';
@@ -278,11 +282,70 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
-  // Initial language setup
   switchLanguage(currentLanguage);
 
   await preloadTranslations();
+
+  // Authentication setup
+  const authButton = document.getElementById('authButton');
+  const passwordModal = document.getElementById('passwordModal');
+  const passwordInput = document.getElementById('passwordInput');
+  const submitPassword = document.getElementById('submitPassword');
+  const closePasswordModal = document.getElementById('closePasswordModal');
+
+  authButton.addEventListener('click', openPasswordModal);
+  submitPassword.addEventListener('click', checkPassword);
+  closePasswordModal.addEventListener('click', closePasswordModalFunc);
+
+  // Add event listener for pressing Enter in the password input
+  passwordInput.addEventListener('keyup', function(event) {
+    if (event.key === 'Enter') {
+      checkPassword();
+    }
+  });
+
+  // Add event listener for clicking outside the modal
+  window.addEventListener('click', function(event) {
+    if (event.target === passwordModal) {
+      closePasswordModalFunc();
+    }
+  });
+
+  updateAuthUI();
 });
+
+function openPasswordModal() {
+  const passwordModal = document.getElementById('passwordModal');
+  passwordModal.style.display = 'block';
+}
+
+function closePasswordModalFunc() {
+  const passwordModal = document.getElementById('passwordModal');
+  const passwordInput = document.getElementById('passwordInput');
+  passwordModal.style.display = 'none';
+  passwordInput.value = ''; // Clear the input when closing
+}
+
+function checkPassword() {
+  const passwordInput = document.getElementById('passwordInput');
+  if (passwordInput.value === ADMIN_PASSWORD) {
+    isAuthenticated = true;
+    updateAuthUI();
+    closePasswordModalFunc();
+  } else {
+    alert(translations[currentLanguage]['incorrect-password']);
+  }
+}
+
+function updateAuthUI() {
+  const authButton = document.getElementById('authButton');
+  const addGameBtn = document.querySelector('.add-game-btn');
+  const removeGameBtn = document.querySelector('.remove-game-btn');
+
+  authButton.innerHTML = isAuthenticated ? '<i class="fas fa-lock-open"></i>' : '<i class="fas fa-lock"></i>';
+  if (addGameBtn) addGameBtn.style.display = isAuthenticated ? 'inline-block' : 'none';
+  if (removeGameBtn) removeGameBtn.style.display = isAuthenticated ? 'inline-block' : 'none';
+}
 
 function loadGameCards(filteredGames = games) {
   const gameEntries = Object.entries(filteredGames);
@@ -837,9 +900,11 @@ function switchLanguage(lang) {
   document.querySelectorAll('[data-translate]').forEach(element => {
     const key = element.getAttribute('data-translate');
     if (translations[lang][key]) {
-      if (element.tagName === 'INPUT' && element.type === 'text') {
-        element.placeholder = translations[lang][key];
-      } else if (element.tagName === 'LABEL') {
+      if (element.tagName === 'INPUT') {
+        if (element.type === 'text' || element.type === 'password') {
+          element.placeholder = translations[lang][key];
+        }
+      } else if (element.tagName === 'BUTTON') {
         element.textContent = translations[lang][key];
       } else {
         element.textContent = translations[lang][key];

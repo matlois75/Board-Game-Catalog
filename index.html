@@ -12,10 +12,16 @@
     <link rel="icon" href="images/Cathys_Games_Logo3.ico" type="image/x-icon" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
     />
   </head>
   <body>
+    <div class="auth-container">
+      <button id="authButton" class="auth-button">
+        <i class="fas fa-lock"></i>
+      </button>
+    </div>
+
     <div class="language-selector">
       <div class="selected-language">
         <img
@@ -25,11 +31,13 @@
           class="flag-icon"
         />
       </div>
+
       <div class="language-dropdown">
         <div class="language-option" data-lang="en">
           <img src="images/us-flag.jpg" alt="English" class="flag-icon" />
           English
         </div>
+
         <div class="language-option" data-lang="fr">
           <img src="images/fr-flag.jpg" alt="Français" class="flag-icon" />
           Français
@@ -50,13 +58,10 @@
         </h1>
         <p data-translate="what-will-we-play">What will we play?</p>
         <div class="game-management-container">
-          <button class="btn-primary add-game-btn" data-translate="add-game">
+          <button class="btn-primary add-game-btn" style="display: none">
             Add Game
           </button>
-          <button
-            class="btn-primary remove-game-btn"
-            data-translate="remove-game"
-          >
+          <button class="btn-primary remove-game-btn" style="display: none">
             Remove Game
           </button>
         </div>
@@ -254,35 +259,34 @@
     </div>
 
     <div id="addGameModal" class="modal">
-      <div class="modal-dialog animate__animated animate__fadeInDown">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" data-translate="add-new-game">
-              Add New Game
-            </h5>
-            <button type="button" class="close-modal-btn">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="gameName" data-translate="game-name-label"
-                >Game Name:</label
-              >
-              <input
-                type="text"
-                id="gameName"
-                class="form-control"
-                autocomplete="off"
-              />
-              <div id="autocompleteResults" class="autocomplete-results"></div>
-            </div>
-            <button
-              id="addGameBtn"
-              class="btn-primary"
-              data-translate="add-game"
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" data-translate="add-new-game">
+            Add New Game
+          </h2>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="gameName" data-translate="game-name-label"
+              >Game Name:</label
             >
-              Add Game
-            </button>
+            <input
+              type="text"
+              id="gameName"
+              class="form-control"
+              data-translate="game-name-placeholder"
+              placeholder="Enter game name"
+            />
+            <div id="autocompleteResults" class="autocomplete-results"></div>
           </div>
+          <button
+            id="addGameBtn"
+            class="btn-primary"
+            data-translate="add-game-button"
+          >
+            Add Game
+          </button>
         </div>
       </div>
     </div>
@@ -297,7 +301,42 @@
       </p>
     </footer>
 
+    <div id="passwordModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" data-translate="enter-password">
+            Enter Password
+          </h2>
+          <button class="close-modal-btn" id="closePasswordModal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <input
+              type="password"
+              id="passwordInput"
+              data-translate="password-placeholder"
+              placeholder="Enter password"
+              class="form-control"
+            />
+          </div>
+          <button
+            id="submitPassword"
+            class="btn-primary"
+            data-translate="submit"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="config.js"></script>
     <script src="scripts.js"></script>
+    <script
+      src="https://kit.fontawesome.com/your-fontawesome-kit.js"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>
