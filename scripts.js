@@ -11,53 +11,8 @@ let isRemoveMode = false;
 let currentLanguage = 'en';
 let isAuthenticated = false;
 
-const games = {
-  "Azul": {
-    title: {
-      en: "Azul",
-      fr: "Azul"
-    },
-    image: "./images/azul.jpg",
-    description: {
-      en: "Azul is a tile-drafting game where players score points by strategically placing colored tiles on their player boards.",
-      fr: "Azul est un jeu de pose de tuiles où les joueurs marquent des points en plaçant stratégiquement des tuiles colorées sur leurs plateaux."
-    },
-    playerCount: "2-4",
-    playTime: "Medium",
-    category: ["Strategy"],
-    author: "Michael Kiesling"
-  },
-  "Abducktion": {
-    title: {
-      en: "Abducktion",
-      fr: "Abducktion"
-    },
-    image: "./images/abducktion.jpg",
-    description: {
-      en: "Abducktion is a wacky party game where players try to abduct unsuspecting citizens and collect their belongings.",
-      fr: "Abducktion est un jeu de société déjanté où les joueurs tentent d'enlever des citoyens sans méfiance et de collecter leurs biens."
-    },
-    playerCount: "3-8",
-    playTime: "Quick",
-    category: ["Party", "Bluffing"],
-    author: "Evan & Josh's Very Special Games Co."
-  },
-  "Wingspan": {
-    title: {
-      en: "Wingspan",
-      fr: "Wingspan"
-    },
-    image: "./images/wingspan.jpg",
-    description: {
-      en: "Wingspan is a bird-themed engine-building game where players attract birds to their wildlife preserves and score points based on their bird collections.",
-      fr: "Wingspan est un jeu de construction de moteur sur le thème des oiseaux où les joueurs attirent des oiseaux dans leurs réserves naturelles et marquent des points en fonction de leurs collections d'oiseaux."
-    },
-    playerCount: "1-5",
-    playTime: "Medium",
-    category: ["Strategy"],
-    author: "Elizabeth Hargrave"
-  }
-};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database()
 
 const translations = {
   en: {
@@ -93,7 +48,7 @@ const translations = {
     "close": "Close",
     'game-not-found': 'Game not found. Please check the name and try again.',
     'fetch-error': 'An error occurred while fetching game data. Please try again.',
-    'incomplete-info': 'Please enter both the game name and author.',
+    'incomplete-info': 'Please choose a game from the list.',
     "players-label": "Players:",
     "play-time-label": "Play Time:",
     "category-label": "Category:",
@@ -129,7 +84,8 @@ const translations = {
     "add-new-game": "Add New Game",
     "game-name-label": "Game Name:",
     "game-name-placeholder": "Enter game name",
-    "add-game-button": "Add Game"
+    "add-game-button": "Add Game",
+    'game-removed-success': '{gameName} removed successfully!'
   },
   fr: {
     "site-title": "Les Jeux de Cathy",
@@ -164,7 +120,7 @@ const translations = {
     "close": "Fermer",
     'game-not-found': 'Jeu non trouvé. Veuillez vérifier le nom et réessayer.',
     'fetch-error': 'Une erreur s\'est produite lors de la récupération des données du jeu. Veuillez réessayer.',
-    'incomplete-info': 'Veuillez saisir le nom du jeu et de l\'auteur.',
+    'incomplete-info': 'Veuillez saisir un jeux de la liste.',
     "players-label": "Joueurs :",
     "play-time-label": "Temps de jeu :",
     "category-label": "Catégorie :",
@@ -200,8 +156,9 @@ const translations = {
     "add-new-game": "Ajouter un nouveau jeu",
     "game-name-label": "Nom du jeu :",
     "game-name-placeholder": "Entrez le nom du jeu",
-    "add-game-button": "Ajouter le jeu"
-  }
+    "add-game-button": "Ajouter le jeu",
+    'game-removed-success': '{gameName} supprimé avec succès !'
+  },
 };
 
 const categoryMapping = {
@@ -220,8 +177,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     return;
   }
 
+  const savedGames = await loadGamesFromFirebase();
+  games = savedGames || {};
+
   setupFilters();
-  loadGameCards();
 
   document.querySelector('.random-game-btn').addEventListener('click', chooseRandomGame);
   
@@ -312,6 +271,9 @@ document.addEventListener('DOMContentLoaded', async function() {
   });
 
   updateAuthUI();
+
+  listenForUpdates();
+  loadGameCards();
 });
 
 function openPasswordModal() {
@@ -683,7 +645,11 @@ async function addGame() {
       const gameData = await fetchGameInfo(gameId);
       
       if (gameData) {
-        console.log('Game data fetched successfully:', gameData);
+        games[gameData.title.en] = gameData;
+        addNewGameCard(gameData);
+        
+        // Save games to Firebase after adding a new game
+        saveGamesToFirebase();
         
         if (currentLanguage === 'fr') {
           try {
@@ -696,9 +662,6 @@ async function addGame() {
             // Continue with untranslated data if translation fails
           }
         }
-        
-        games[gameData.title.en] = gameData;
-        addNewGameCard(gameData);
         
         console.log('Game added successfully:', gameData.title.en);
         showNotification(translations[currentLanguage]['game-added-success'].replace('{gameName}', gameData.title[currentLanguage]));
@@ -886,11 +849,17 @@ function handleRemoveGame(event) {
       // Remove the game from the games object
       delete games[gameToRemove.title.en];
       
+      // Save games to Firebase after removing a game
+      saveGamesToFirebase();
+      
       // Remove the game card from the DOM
       gameCard.remove();
 
       // Refresh the game cards to update the layout
       applyFilters();
+      
+      // Show notification
+      showNotification(translations[currentLanguage]['game-removed-success'].replace('{gameName}', gameTitle));
     }
   }
 }
@@ -1142,4 +1111,32 @@ function mapCategory(externalCategory) {
       }
   }
   return 'Other';  // Default category if no match is found
+}
+
+// Function to save games to Firebase
+function saveGamesToFirebase() {
+  database.ref('games').set(games);
+}
+
+// Function to load games from Firebase
+function loadGamesFromFirebase() {
+  return database.ref('games').once('value')
+    .then((snapshot) => {
+      return snapshot.val() || {};  // Return an empty object if no data
+    })
+    .catch((error) => {
+      console.error('Error loading games from Firebase:', error);
+      return {};  // Return an empty object on error
+    });
+}
+
+// Add this function to listen for real-time updates
+function listenForUpdates() {
+  database.ref('games').on('value', (snapshot) => {
+    const updatedGames = snapshot.val();
+    if (updatedGames) {
+      games = updatedGames;
+      loadGameCards();
+    }
+  });
 }
