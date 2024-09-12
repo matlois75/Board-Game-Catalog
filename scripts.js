@@ -85,7 +85,8 @@ const translations = {
     "game-name-label": "Game Name:",
     "game-name-placeholder": "Enter game name",
     "add-game-button": "Add Game",
-    'game-removed-success': '{gameName} removed successfully!'
+    'game-removed-success': '{gameName} removed successfully!',
+    "search-games": "Search Games"
   },
   fr: {
     "site-title": "Les Jeux de Cathy",
@@ -157,7 +158,8 @@ const translations = {
     "game-name-label": "Nom du jeu :",
     "game-name-placeholder": "Entrez le nom du jeu",
     "add-game-button": "Ajouter le jeu",
-    'game-removed-success': '{gameName} supprimé avec succès !'
+    'game-removed-success': '{gameName} supprimé avec succès !',
+    "search-games": "Rechercher des jeux"
   },
 };
 
@@ -241,6 +243,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', handleSearch);
+  }
+
   switchLanguage(currentLanguage);
 
   await preloadTranslations();
@@ -311,7 +318,11 @@ function updateAuthUI() {
 
 function loadGameCards(filteredGames = games) {
   const gameEntries = Object.entries(filteredGames);
-  const totalPages = Math.ceil(gameEntries.length / gamesPerPage);
+  const totalPages = Math.max(1, Math.ceil(gameEntries.length / gamesPerPage));
+  
+  // Ensure currentPage is within valid range
+  currentPage = Math.max(1, Math.min(currentPage, totalPages));
+  
   const startIndex = (currentPage - 1) * gamesPerPage;
   const endIndex = startIndex + gamesPerPage;
   const currentGames = gameEntries.slice(startIndex, endIndex);
@@ -456,6 +467,8 @@ function setupFilters() {
     checkbox.addEventListener('change', applyFilters);
   });
 
+  document.querySelector('[data-translate="search-games"]').textContent = translations[currentLanguage]['search-games'];
+
   resetFiltersBtn.addEventListener('click', resetFilters);
 
   // Translate filter labels
@@ -503,19 +516,25 @@ function applyFilters() {
   const playerCount = parseInt(document.getElementById('playerCountFilter').value);
   const selectedGameTypes = Array.from(document.querySelectorAll('input[name="gameType"]:checked')).map(cb => cb.value);
   const selectedPlayTimes = Array.from(document.querySelectorAll('input[name="playTime"]:checked')).map(cb => cb.value);
+  const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
 
   const filteredGames = Object.fromEntries(
-      Object.entries(games).filter(([_, game]) => {
-          const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
-          const meetsPlayerCount = playerCount === 0 || (playerCount >= minPlayers && (playerCount <= maxPlayers || maxPlayers === '+'));
-          const meetsGameType = selectedGameTypes.length === 0 || game.category.some(cat => selectedGameTypes.includes(cat));
-          const meetsPlayTime = selectedPlayTimes.length === 0 || selectedPlayTimes.includes(game.playTime);
+    Object.entries(games).filter(([_, game]) => {
+      const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
+      const meetsPlayerCount = playerCount === 0 || (playerCount >= minPlayers && (playerCount <= maxPlayers || maxPlayers === '+'));
+      const meetsGameType = selectedGameTypes.length === 0 || game.category.some(cat => selectedGameTypes.includes(cat));
+      const meetsPlayTime = selectedPlayTimes.length === 0 || selectedPlayTimes.includes(game.playTime);
+      const meetsSearchQuery = searchQuery === '' || game.title[currentLanguage].toLowerCase().includes(searchQuery);
 
-          return meetsPlayerCount && meetsGameType && meetsPlayTime;
-      })
+      return meetsPlayerCount && meetsGameType && meetsPlayTime && meetsSearchQuery;
+    })
   );
 
-  currentPage = 1;
+  // Reset to page 1 if no games match the criteria or if search is cleared
+  if (Object.keys(filteredGames).length === 0 || searchQuery === '') {
+    currentPage = 1;
+  }
+
   loadGameCards(filteredGames);
 }
 
@@ -615,12 +634,17 @@ async function fetchGameInfo(gameId) {
       playTime: playTimeCategory,
       category: [mappedCategory],
       originalCategory: {
-          en: category,
-          fr: translatedCategory
+        en: category,
+        fr: category // Will be translated later
       },
       author: author
     };
-
+  
+    // Translate the original category if the current language is French
+    if (currentLanguage === 'fr') {
+      gameData.originalCategory.fr = await translateText(category, 'FR');
+    }
+  
     console.log('Parsed game data:', gameData);
     return gameData;
   } catch (error) {
@@ -657,6 +681,7 @@ async function addGame() {
             gameData.title.fr = await translateText(gameData.title.en, 'FR');
             gameData.description.fr = await translateText(gameData.description.en, 'FR');
             gameData.author = await translateText(gameData.author, 'FR');
+            gameData.originalCategory.fr = await translateText(gameData.originalCategory.en, 'FR');
           } catch (error) {
             console.error('Translation error:', error);
             // Continue with untranslated data if translation fails
@@ -864,7 +889,7 @@ function handleRemoveGame(event) {
   }
 }
 
-function switchLanguage(lang) {
+async function switchLanguage(lang) {
   currentLanguage = lang;
   document.querySelectorAll('[data-translate]').forEach(element => {
     const key = element.getAttribute('data-translate');
@@ -880,6 +905,12 @@ function switchLanguage(lang) {
       }
     }
   });
+
+  // Update search placeholder
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.placeholder = translations[lang]['search-placeholder'] || 'Search games...';
+  }
   
   // Update the selected language flag
   const selectedLanguageImg = document.querySelector('#selectedLanguageFlag');
@@ -888,7 +919,11 @@ function switchLanguage(lang) {
 
   // Update dynamic content
   document.title = translations[lang]['site-title'];
-  loadGameCards(games);
+  
+  // Translate original categories for all games before reloading cards
+  await translateAllOriginalCategories();
+  
+  loadGameCards(games, false); // Pass false to prevent resetting to page 1
   setupFilters();
   updateRemoveButtonText();
   updateGameDetails();
@@ -898,6 +933,22 @@ function switchLanguage(lang) {
 
   // Save language preference
   localStorage.setItem('language', lang);
+}
+
+async function translateAllOriginalCategories() {
+  const gamePromises = Object.values(games).map(async (game) => {
+    if (!game.originalCategory) {
+      game.originalCategory = { en: game.category[0], fr: game.category[0] };
+    }
+    if (currentLanguage === 'fr' && (!game.originalCategory.fr || game.originalCategory.fr === game.originalCategory.en)) {
+      game.originalCategory.fr = await translateText(game.originalCategory.en, 'FR');
+    } else if (currentLanguage === 'en' && (!game.originalCategory.en || game.originalCategory.en === game.originalCategory.fr)) {
+      game.originalCategory.en = await translateText(game.originalCategory.fr, 'EN');
+    }
+    return game;
+  });
+
+  await Promise.all(gamePromises);
 }
 
 function updateGameDetails() {
@@ -1078,25 +1129,61 @@ function updatePagination(totalPages) {
   const paginationContainer = document.getElementById('pagination');
   paginationContainer.innerHTML = '';
 
-  const prevButton = document.createElement('button');
-  prevButton.textContent = 'Previous';
-  prevButton.addEventListener('click', () => changePage(currentPage - 1));
-  prevButton.disabled = currentPage === 1;
-  paginationContainer.appendChild(prevButton);
+  if (totalPages > 1) {
+    const createPageButton = (page, text = page) => {
+      const button = document.createElement('button');
+      button.textContent = text;
+      button.addEventListener('click', () => changePage(page));
+      button.disabled = currentPage === page;
+      button.classList.add('page-button');
+      if (currentPage === page) button.classList.add('active');
+      return button;
+    };
 
-  for (let i = 1; i <= totalPages; i++) {
-      const pageButton = document.createElement('button');
-      pageButton.textContent = i;
-      pageButton.addEventListener('click', () => changePage(i));
-      pageButton.disabled = currentPage === i;
-      paginationContainer.appendChild(pageButton);
+    const createEllipsis = () => {
+      const span = document.createElement('span');
+      span.textContent = '...';
+      span.classList.add('ellipsis');
+      return span;
+    };
+
+    // Previous button
+    paginationContainer.appendChild(createPageButton(currentPage - 1, 'Previous'));
+
+    // First page
+    paginationContainer.appendChild(createPageButton(1));
+
+    // Ellipsis and middle pages
+    if (totalPages > 7) {
+      if (currentPage > 3) {
+        paginationContainer.appendChild(createEllipsis());
+      }
+
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        paginationContainer.appendChild(createPageButton(i));
+      }
+
+      if (currentPage < totalPages - 2) {
+        paginationContainer.appendChild(createEllipsis());
+      }
+    } else {
+      // If 7 or fewer pages, show all
+      for (let i = 2; i < totalPages; i++) {
+        paginationContainer.appendChild(createPageButton(i));
+      }
+    }
+
+    // Last page
+    if (totalPages > 1) {
+      paginationContainer.appendChild(createPageButton(totalPages));
+    }
+
+    // Next button
+    paginationContainer.appendChild(createPageButton(currentPage + 1, 'Next'));
   }
-
-  const nextButton = document.createElement('button');
-  nextButton.textContent = 'Next';
-  nextButton.addEventListener('click', () => changePage(currentPage + 1));
-  nextButton.disabled = currentPage === totalPages;
-  paginationContainer.appendChild(nextButton);
 }
 
 function changePage(newPage) {
@@ -1139,4 +1226,8 @@ function listenForUpdates() {
       loadGameCards();
     }
   });
+}
+
+function handleSearch() {
+  applyFilters();
 }
