@@ -759,74 +759,6 @@ footer {
     pointer-events: none;
   }
 
-@media (max-width: 768px) {
-    .container {
-        width: 95%;
-    }
-
-    .game-card-container {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    }
-
-    .game-card {
-        min-height: 300px;
-      }
-    
-      .game-card img {
-        height: 150px;
-      }
-    
-      .tags {
-        max-height: 80px;
-      }
-
-    .game-details-content {
-        width: 95%;
-        margin: 20px auto;
-    }
-
-    .game-details-info {
-        grid-template-columns: 1fr;
-    }
-
-    .filter-container {
-        flex-direction: column;
-    }
-
-    .filter-group {
-        width: 100%;
-    }
-
-    .dropdown-content {
-        position: static;
-        max-height: none;
-    }
-
-    #resetFilters {
-        align-self: center;
-        margin-top: 20px;
-    }
-
-    .games-per-page-container {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .filter-group.search-group {
-        order: -1; /* Move search to the top on mobile */
-    }
-
-    .pagination {
-        margin-top: 15px;
-    }
-      
-    .pagination .page-button,
-    .pagination .ellipsis {
-        padding: 6px 10px;
-        margin: 2px;
-    }
-}
-
 /* Loading indicator styles */
 .game-details.loading::before {
     content: "";
@@ -948,3 +880,141 @@ footer {
 #addGameModal .modal-content {
     max-width: 400px;
 }
+
+@media (max-width: 768px) {
+    /* General layout adjustments */
+    .container {
+      width: 100%;
+      padding: 0 15px;
+    }
+  
+    /* Header adjustments */
+    .bg-gradient-radial {
+      padding: 2rem 0;
+    }
+  
+    h1[data-translate="site-title"] {
+      font-size: 2rem;
+    }
+  
+    /* Filter container adjustments */
+    .filter-container {
+      padding: 15px;
+      gap: 15px;
+    }
+  
+    .filter-group {
+      width: 100%;
+    }
+  
+    /* Search input adjustment */
+    .search-input {
+      padding: 10px 35px 10px 15px;
+      font-size: 14px;
+    }
+  
+    /* Game card adjustments */
+    .game-card-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+  
+    .game-card {
+      min-height: 250px;
+    }
+  
+    .game-card img {
+      height: 120px;
+    }
+  
+    .card-title {
+      font-size: 1rem;
+    }
+  
+    .tags {
+      max-height: 70px;
+    }
+  
+    .tag {
+      font-size: 0.6rem;
+      padding: 2px 6px;
+    }
+  
+    /* Game details modal adjustments */
+    .game-details-content {
+      padding: 20px;
+      margin: 30px auto;
+    }
+  
+    .game-details-title {
+      font-size: 1.5rem;
+    }
+  
+    .game-details-description {
+      font-size: 0.9rem;
+      max-height: 200px;
+    }
+  
+    .game-details-info {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  
+    /* Button adjustments */
+    .btn-primary {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+  
+    /* Pagination adjustments */
+    .pagination {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  
+    .pagination .page-button,
+    .pagination .ellipsis {
+      margin: 2px;
+      padding: 6px 10px;
+      font-size: 0.9rem;
+    }
+  
+    /* Language selector and auth button adjustments */
+    .language-selector,
+    .auth-container {
+      top: 10px;
+    }
+  
+    .language-selector {
+      right: 10px;
+    }
+  
+    .auth-container {
+      right: 60px;
+    }
+  
+    .selected-language,
+    .auth-button {
+      width: 30px;
+      height: 30px;
+    }
+  
+    .auth-button {
+      font-size: 18px;
+    }
+  
+    /* Add Game modal adjustments */
+    #addGameModal .modal-content,
+    #passwordModal .modal-content {
+      width: 95%;
+      padding: 20px;
+    }
+  
+    .modal-title {
+      font-size: 1.5rem;
+    }
+  
+    .form-control {
+      font-size: 14px;
+    }
+  }
