@@ -338,70 +338,76 @@ function loadGameCards(filteredGames = games) {
 
 async function openGameDetails(event) {
   if (!isRemoveMode) {
-      const gameCard = event.target.closest('.game-card');
-      if (gameCard) {
-          // Show loading indicator
-          gameDetails.classList.add('loading');
-          gameCard.classList.add('loading');
-          gameDetails.classList.add('open');
+    const gameCard = event.target.closest('.game-card');
+    if (gameCard) {
+      // Show loading indicator
+      gameDetails.classList.add('loading');
+      gameCard.classList.add('loading');
+      gameDetails.classList.add('open');
 
-          const gameId = gameCard.dataset.gameTitle;
-          const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
-          
-          // Preload common translations if not already cached
-          await preloadTranslations();
+      const gameId = gameCard.dataset.gameTitle;
+      const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
+      
+      // Preload common translations if not already cached
+      await preloadTranslations();
 
-          // Format player count
-          const [minPlayers, maxPlayers] = gameData.playerCount.split('-').map(Number);
-          const playerCountDisplay = minPlayers === maxPlayers ? `${minPlayers}` : gameData.playerCount;
+      // Format player count
+      const [minPlayers, maxPlayers] = gameData.playerCount.split('-').map(Number);
+      const playerCountDisplay = minPlayers === maxPlayers ? `${minPlayers}` : gameData.playerCount;
 
-          // Prepare all translations
-          const [
-              playersLabel,
-              playTimeLabel,
-              translatedPlayTime,
-              categoryLabel,
-              translatedCategories,
-              authorLabel,
-              translatedDescription
-          ] = await Promise.all([
-              translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase()),
-              translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase()),
-              translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase()),
-              translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase()),
-              Promise.all(gameData.category.map(cat => 
-                  translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
-              )),
-              translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase()),
-              currentLanguage === 'fr' ? translateText(gameData.description.en, 'FR') : gameData.description.en
-          ]);
+      // Prepare all translations
+      const [
+        playersLabel,
+        playTimeLabel,
+        translatedPlayTime,
+        categoryLabel,
+        translatedCategories,
+        authorLabel,
+        translatedDescription
+      ] = await Promise.all([
+        translateText(translations[currentLanguage]['players-label'], currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage]['play-time-label'], currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage][gameData.playTime] || gameData.playTime, currentLanguage.toUpperCase()),
+        translateText(translations[currentLanguage]['category-label'], currentLanguage.toUpperCase()),
+        Promise.all(gameData.category.map(cat => 
+          translateText(translations[currentLanguage][cat] || cat, currentLanguage.toUpperCase())
+        )),
+        translateText(translations[currentLanguage]['author-label'], currentLanguage.toUpperCase()),
+        currentLanguage === 'fr' ? translateText(gameData.description.en, 'FR') : gameData.description.en
+      ]);
 
-          // Update the UI with all translations ready
-          gameDetails.querySelector('.game-details-title').textContent = gameData.title[currentLanguage];
-          gameDetails.querySelector('.game-details-image').src = gameData.image;
-          gameDetails.querySelector('.game-details-description').textContent = translatedDescription;
-          
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-label').textContent = playersLabel;
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = playerCountDisplay;
-          
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-label').textContent = playTimeLabel;
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = translatedPlayTime;
-          
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-label').textContent = categoryLabel;
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = translatedCategories.join(', ');
-          
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
-          gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
-          
-          // Hide loading indicator
-          gameDetails.classList.remove('loading');
-          gameCard.classList.remove('loading');
+      // Clean and format the description
+      const cleanedDescription = cleanDescription(translatedDescription);
 
-          // Prevent the click event from immediately closing the details
-          setTimeout(() => {
-              document.addEventListener('click', handleOutsideClick);
-          }, 0);
-      }
+      // Update the UI with all translations ready
+      gameDetails.querySelector('.game-details-title').textContent = gameData.title[currentLanguage];
+      gameDetails.querySelector('.game-details-image').src = gameData.image;
+      
+      // Use innerHTML and replace newlines with <br> tags
+      const descriptionElement = gameDetails.querySelector('.game-details-description');
+      descriptionElement.innerHTML = cleanedDescription.replace(/\n/g, '<br>');
+      
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-label').textContent = playersLabel;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(1) .game-details-info-value').textContent = playerCountDisplay;
+      
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-label').textContent = playTimeLabel;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(2) .game-details-info-value').textContent = translatedPlayTime;
+      
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-label').textContent = categoryLabel;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(3) .game-details-info-value').textContent = translatedCategories.join(', ');
+      
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
+      gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
+      
+      // Hide loading indicator
+      gameDetails.classList.remove('loading');
+      gameCard.classList.remove('loading');
+
+      // Prevent the click event from immediately closing the details
+      setTimeout(() => {
+          document.addEventListener('click', handleOutsideClick);
+      }, 0);
+    }
   }
 }
 
@@ -627,8 +633,8 @@ async function fetchGameInfo(gameId) {
       },
       image: imageUrl,
       description: {
-        en: description,
-        fr: description // Will be translated later if needed
+        en: cleanDescription(description),
+        fr: cleanDescription(description) // Will be translated later if needed
       },
       playerCount: `${minPlayers}-${maxPlayers}`,
       playTime: playTimeCategory,
@@ -1230,4 +1236,34 @@ function listenForUpdates() {
 
 function handleSearch() {
   applyFilters();
+}
+
+function cleanDescription(description) {
+  // Replace HTML entities with their actual characters
+  const entities = {
+    '&quot;': '"',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&#10;': '\n',
+    '&nbsp;': ' '
+  };
+  
+  // Use a regular expression to match all HTML entities, including those with spaces
+  let cleanedText = description.replace(/&(?:[a-zA-Z]+|#\d+);/g, match => {
+    // Remove any spaces from the match
+    const cleanMatch = match.replace(/\s/g, '');
+    return entities[cleanMatch] || match;
+  });
+  
+  // Replace multiple consecutive newlines with a single one
+  cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
+  
+  // Remove trailing newlines, semicolons, and whitespace in any order
+  cleanedText = cleanedText.replace(/(?:\s*\n*;*\s*)*$/, '');
+  
+  // Trim leading and trailing whitespace
+  cleanedText = cleanedText.trim();
+  
+  return cleanedText;
 }

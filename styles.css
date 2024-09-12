@@ -395,9 +395,31 @@ main.container {
 }
 
 .game-details-description {
-    margin-bottom: 20px;
-    line-height: 1.8;
-}
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+  }
+  
+  /* Styling for the scrollbar */
+  .game-details-description::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .game-details-description::-webkit-scrollbar-track {
+    background: var(--background-color);
+  }
+  
+  .game-details-description::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 4px;
+  }
+  
+  .game-details-description::-webkit-scrollbar-thumb:hover {
+    background-color: var(--primary-color);
+  }
 
 .game-details-info {
     display: grid;
