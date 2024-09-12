@@ -73,55 +73,66 @@ main.container {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 350px;
+    height: auto; /* Changed from fixed height */
+    min-height: 350px; /* Minimum height to maintain consistency */
     position: relative;
-}
-
-.game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-}
-
-.game-card img {
+  }
+  
+  .game-card img {
     width: 100%;
     height: 200px;
     object-fit: cover;
-}
-
-.card-content {
+  }
+  
+  .card-content {
     padding: 20px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-}
-
-.card-title {
+    overflow: hidden; /* Prevent content from spilling out */
+  }
+  
+  .card-title {
     margin: 0 0 10px 0;
     font-size: 1.2rem;
     color: var(--primary-color);
     font-weight: bold;
-}
-
-.tags {
+  }
+  
+  .tags {
     display: flex;
     flex-wrap: wrap;
     margin-top: auto;
-}
-
-.tag {
+    max-height: 100px; /* Limit the height of the tags area */
+    overflow-y: auto; /* Make it scrollable if needed */
+    padding-right: 5px; /* Space for scrollbar */
+  }
+  
+  .tag {
     background: var(--accent-color);
     color: var(--primary-color);
-    padding: 4px 12px;
+    padding: 4px 8px;
     border-radius: 20px;
     font-size: 0.7rem;
     margin-right: 5px;
     margin-bottom: 5px;
     transition: background-color 0.3s ease;
-}
-
-.tag:hover {
-    background-color: var(--secondary-color);
-}
+    white-space: nowrap; /* Prevent tags from wrapping */
+  }
+  
+  /* Scrollbar styling for the tags */
+  .tags::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  .tags::-webkit-scrollbar-track {
+    background: var(--card-background);
+  }
+  
+  .tags::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 20px;
+  }
 
 .filter-container {
     position: relative;
@@ -758,12 +769,16 @@ footer {
     }
 
     .game-card {
-        height: 300px;
-    }
-
-    .game-card img {
+        min-height: 300px;
+      }
+    
+      .game-card img {
         height: 150px;
-    }
+      }
+    
+      .tags {
+        max-height: 80px;
+      }
 
     .game-details-content {
         width: 95%;
@@ -853,6 +868,33 @@ footer {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+  }
+
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
   .autocomplete-results {

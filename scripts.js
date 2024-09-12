@@ -7,12 +7,16 @@ const removeGameBtn = document.querySelector('.remove-game-btn');
 const addGameBtn = document.querySelector('.add-game-btn');
 const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
 const translationCache = {};
+let filteredGames = {};
 let isRemoveMode = false;
 let currentLanguage = 'en';
-let isAuthenticated = false;
 
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database()
+
+let isAuthenticated = false;
+const auth = firebase.auth();
+
 
 const translations = {
   en: {
@@ -86,10 +90,14 @@ const translations = {
     "game-name-placeholder": "Enter game name",
     "add-game-button": "Add Game",
     'game-removed-success': '{gameName} removed successfully!',
-    "search-games": "Search Games"
+    "search-placeholder": "Search games...",
+    "auth-required": "Authentication required to perform this action.",
+    "Other": "Other",
+    "add-game": "Add Game",
+    "no-games-match-filters": "No games match the current filters."
   },
   fr: {
-    "site-title": "Les Jeux de Cathy",
+    "site-title": "Jeux de Cathy",
     "what-will-we-play": "À quoi allons-nous jouer ?",
     "add-game": "Ajouter un jeu",
     "remove-game": "Supprimer un jeu",
@@ -159,7 +167,11 @@ const translations = {
     "game-name-placeholder": "Entrez le nom du jeu",
     "add-game-button": "Ajouter le jeu",
     'game-removed-success': '{gameName} supprimé avec succès !',
-    "search-games": "Rechercher des jeux"
+    "search-placeholder": "Rechercher des jeux...",
+    "auth-required": "Authentification requise pour effectuer cette action.",
+    "Other": "Autre",
+    "add-game": "Ajouter un jeu",
+    "no-games-match-filters": "Aucun jeu ne correspond aux filtres actuels."
   },
 };
 
@@ -281,6 +293,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   listenForUpdates();
   loadGameCards();
+
+  auth.onAuthStateChanged((user) => {
+    isAuthenticated = !!user;
+    updateAuthUI();
+  });
 });
 
 function openPasswordModal() {
@@ -297,13 +314,27 @@ function closePasswordModalFunc() {
 
 function checkPassword() {
   const passwordInput = document.getElementById('passwordInput');
-  if (passwordInput.value === ADMIN_PASSWORD) {
-    isAuthenticated = true;
+  const email = "famille@jeux.com";
+  const password = passwordInput.value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      isAuthenticated = true;
+      updateAuthUI();
+      closePasswordModalFunc();
+    })
+    .catch((error) => {
+      alert(translations[currentLanguage]['incorrect-password']);
+    });
+}
+
+function signOut() {
+  auth.signOut().then(() => {
+    isAuthenticated = false;
     updateAuthUI();
-    closePasswordModalFunc();
-  } else {
-    alert(translations[currentLanguage]['incorrect-password']);
-  }
+  }).catch((error) => {
+    console.error("Sign out error", error);
+  });
 }
 
 function updateAuthUI() {
@@ -311,9 +342,17 @@ function updateAuthUI() {
   const addGameBtn = document.querySelector('.add-game-btn');
   const removeGameBtn = document.querySelector('.remove-game-btn');
 
-  authButton.innerHTML = isAuthenticated ? '<i class="fas fa-lock-open"></i>' : '<i class="fas fa-lock"></i>';
-  if (addGameBtn) addGameBtn.style.display = isAuthenticated ? 'inline-block' : 'none';
-  if (removeGameBtn) removeGameBtn.style.display = isAuthenticated ? 'inline-block' : 'none';
+  if (isAuthenticated) {
+    authButton.innerHTML = '<i class="fas fa-lock-open"></i>';
+    authButton.onclick = signOut;
+    if (addGameBtn) addGameBtn.style.display = 'inline-block';
+    if (removeGameBtn) removeGameBtn.style.display = 'inline-block';
+  } else {
+    authButton.innerHTML = '<i class="fas fa-lock"></i>';
+    authButton.onclick = openPasswordModal;
+    if (addGameBtn) addGameBtn.style.display = 'none';
+    if (removeGameBtn) removeGameBtn.style.display = 'none';
+  }
 }
 
 function loadGameCards(filteredGames = games) {
@@ -341,12 +380,10 @@ async function openGameDetails(event) {
     const gameCard = event.target.closest('.game-card');
     if (gameCard) {
       // Show loading indicator
-      gameDetails.classList.add('loading');
-      gameCard.classList.add('loading');
-      gameDetails.classList.add('open');
+      showLoading();
 
       const gameId = gameCard.dataset.gameTitle;
-      const gameData = Object.values(games).find(game => game.title[currentLanguage] === gameId);
+      const gameData = Object.values(games).find(game => game.title.en === gameId);
       
       // Preload common translations if not already cached
       await preloadTranslations();
@@ -399,13 +436,13 @@ async function openGameDetails(event) {
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-label').textContent = authorLabel;
       gameDetails.querySelector('.game-details-info .game-details-info-item:nth-child(4) .game-details-info-value').textContent = gameData.author;
       
-      // Hide loading indicator
-      gameDetails.classList.remove('loading');
-      gameCard.classList.remove('loading');
+      hideLoading();
+
+      gameDetails.classList.add('open');
 
       // Prevent the click event from immediately closing the details
       setTimeout(() => {
-          document.addEventListener('click', handleOutsideClick);
+        document.addEventListener('click', handleOutsideClick);
       }, 0);
     }
   }
@@ -414,6 +451,7 @@ async function openGameDetails(event) {
 function closeGameDetails() {
   gameDetails.classList.remove('open');
   document.removeEventListener('click', handleOutsideClick);
+  hideLoading(); // Ensure loading is hidden when closing details
 }
 
 function handleOutsideClick(event) {
@@ -434,18 +472,18 @@ function addNewGameCard(gameData) {
   const playerCountDisplay = minPlayers === maxPlayers ? `${minPlayers}` : gameData.playerCount;
 
   const newGameCard = `
-      <div class="game-card" data-game-title="${gameData.title[currentLanguage]}">
-          <img src="${gameData.image}" alt="${gameData.title[currentLanguage]}" class="w-full h-48 object-cover rounded-md">
+      <div class="game-card" data-game-title="${gameData.title.en}">
+          <img src="${gameData.image}" alt="${gameData.title.en}" class="w-full h-48 object-cover rounded-md">
           <div class="card-content px-4 py-2 rounded-b-md bg-gray-800 opacity-75">
-              <h3 class="card-title text-white font-bold">${gameData.title[currentLanguage]}</h3>
+              <h3 class="card-title text-white font-bold">${gameData.title.en}</h3>
               <div class="tags">
-                  ${gameData.category.map(cat => `<span class="tag">${translations[currentLanguage][cat] || cat}</span>`).join('')}
+                  ${gameData.category.map(cat => `<span class="tag">${translations[currentLanguage][cat] || translations[currentLanguage]['Other']}</span>`).join('')}
                   ${gameData.originalCategory ? `<span class="tag original-category">${gameData.originalCategory[currentLanguage]}</span>` : ''}
                   <span class="tag">${playerCountDisplay} ${translations[currentLanguage]['players']}</span>
                   <span class="tag">${translations[currentLanguage][gameData.playTime] || gameData.playTime}</span>
               </div>
           </div>
-          <button class="remove-button" data-game-title="${gameData.title[currentLanguage]}">-</button>
+          <button class="remove-button" data-game-title="${gameData.title.en}">-</button>
       </div>
   `;
   gameCardContainer.insertAdjacentHTML('beforeend', newGameCard);
@@ -524,7 +562,7 @@ function applyFilters() {
   const selectedPlayTimes = Array.from(document.querySelectorAll('input[name="playTime"]:checked')).map(cb => cb.value);
   const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
 
-  const filteredGames = Object.fromEntries(
+  filteredGames = Object.fromEntries(
     Object.entries(games).filter(([_, game]) => {
       const [minPlayers, maxPlayers] = game.playerCount.split('-').map(Number);
       const meetsPlayerCount = playerCount === 0 || (playerCount >= minPlayers && (playerCount <= maxPlayers || maxPlayers === '+'));
@@ -571,11 +609,13 @@ function updateRemoveButtons() {
 }
 
 function chooseRandomGame() {
-  const gameCards = gameCardContainer.querySelectorAll('.game-card');
-  if (gameCards.length > 0) {
-    const randomIndex = Math.floor(Math.random() * gameCards.length);
-    const randomGame = gameCards[randomIndex];
-    openGameDetails({ target: randomGame });
+  const filteredGameArray = Object.values(filteredGames);
+  if (filteredGameArray.length > 0) {
+    const randomIndex = Math.floor(Math.random() * filteredGameArray.length);
+    const randomGame = filteredGameArray[randomIndex];
+    openGameDetails({ target: { closest: () => ({ dataset: { gameTitle: randomGame.title[currentLanguage] } }) } });
+  } else {
+    showNotification(translations[currentLanguage]['no-games-match-filters'], 3000);
   }
 }
 
@@ -660,6 +700,11 @@ async function fetchGameInfo(gameId) {
 }
 
 async function addGame() {
+  if (!isAuthenticated) {
+    alert(translations[currentLanguage]['auth-required']);
+    return;
+  }
+
   const gameName = gameNameInput.value;
   const gameId = gameNameInput.dataset.id;
 
@@ -694,8 +739,8 @@ async function addGame() {
           }
         }
         
-        console.log('Game added successfully:', gameData.title.en);
-        showNotification(translations[currentLanguage]['game-added-success'].replace('{gameName}', gameData.title[currentLanguage]));
+        const successMessage = translations[currentLanguage]['game-added-success'].replace('{gameName}', gameData.title.en);
+        showNotification(successMessage);
         
         closeModal();
         applyFilters();
@@ -708,7 +753,8 @@ async function addGame() {
       // Check if the game was actually added despite the error
       if (games[gameName] || Object.values(games).some(game => game.title.en === gameName)) {
         console.log('Game was added despite error:', gameName);
-        showNotification(translations[currentLanguage]['game-added-with-warning'].replace('{gameName}', gameName));
+        const warningMessage = translations[currentLanguage]['game-added-with-warning'].replace('{gameName}', gameName);
+        showNotification(warningMessage);
         closeModal();
         applyFilters();
       } else {
@@ -865,6 +911,11 @@ function toggleRemoveMode() {
 }
 
 function handleRemoveGame(event) {
+  if (!isAuthenticated) {
+    alert(translations[currentLanguage]['auth-required']);
+    return;
+  }
+
   const removeButton = event.target.closest('.remove-button');
   if (removeButton && isRemoveMode) {
     event.stopPropagation(); // Prevent opening game details
@@ -872,9 +923,7 @@ function handleRemoveGame(event) {
     const gameTitle = gameCard.dataset.gameTitle;
     
     // Find the game in the games object using the title in both languages
-    const gameToRemove = Object.values(games).find(game => 
-      game.title[currentLanguage] === gameTitle || game.title.en === gameTitle
-    );
+    const gameToRemove = Object.values(games).find(game => game.title.en === gameTitle);
 
     if (gameToRemove) {
       // Remove the game from the games object
@@ -911,6 +960,12 @@ async function switchLanguage(lang) {
       }
     }
   });
+
+  // Update the "Add Game" button text
+  const addGameBtn = document.querySelector('.add-game-btn');
+  if (addGameBtn) {
+    addGameBtn.textContent = translations[lang]['add-game'];
+  }
 
   // Update search placeholder
   const searchInput = document.getElementById('searchInput');
@@ -1199,9 +1254,9 @@ function changePage(newPage) {
 
 function mapCategory(externalCategory) {
   for (const [internalCategory, externalCategories] of Object.entries(categoryMapping)) {
-      if (externalCategories.some(cat => externalCategory.toLowerCase().includes(cat.toLowerCase()))) {
-          return internalCategory;
-      }
+    if (externalCategories.some(cat => externalCategory.toLowerCase().includes(cat.toLowerCase()))) {
+      return internalCategory;
+    }
   }
   return 'Other';  // Default category if no match is found
 }
@@ -1266,4 +1321,20 @@ function cleanDescription(description) {
   cleanedText = cleanedText.trim();
   
   return cleanedText;
+}
+
+function showLoading() {
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  const spinner = document.createElement('div');
+  spinner.className = 'loading-spinner';
+  overlay.appendChild(spinner);
+  document.body.appendChild(overlay);
+}
+
+function hideLoading() {
+  const overlay = document.querySelector('.loading-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
 }
