@@ -18,8 +18,10 @@ let content = fs.readFileSync('scripts.js', 'utf8');
 envVars.forEach(varName => {
   const value = process.env[varName];
   if (value) {
-    const regex = new RegExp(varName, 'g');
-    content = content.replace(regex, value);
+    const regex = new RegExp(`'${varName}'`, 'g');
+    content = content.replace(regex, `'${value}'`);
+  } else {
+    console.warn(`Warning: Environment variable ${varName} is not set.`);
   }
 });
 
