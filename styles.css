@@ -1044,3 +1044,232 @@ footer {
         width: 100%;
     }
 }
+
+/* iPad styles */
+@media only screen 
+and (min-device-width: 768px) 
+and (max-device-width: 1024px) 
+and (-webkit-min-device-pixel-ratio: 2) {
+    /* Portrait */
+    @media (orientation: portrait) {
+        .container {
+            max-width: 90%;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .game-card {
+            min-height: 280px;
+        }
+        
+        .game-card img {
+            height: 160px;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+        }
+        
+        .tag {
+            font-size: 0.8rem;
+        }
+    }
+    
+    /* Landscape */
+    @media (orientation: landscape) {
+        .container {
+            max-width: 95%;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .game-card {
+            min-height: 250px;
+        }
+        
+        .game-card img {
+            height: 140px;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+        }
+        
+        .tag {
+            font-size: 0.75rem;
+        }
+    }
+}
+
+/* iPhone 12 styles */
+@media only screen 
+and (min-device-width: 390px) 
+and (max-device-width: 844px) 
+and (-webkit-min-device-pixel-ratio: 3) {
+    /* Portrait */
+    @media (orientation: portrait) {
+        .container {
+            max-width: 100%;
+            padding: 0 10px;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .game-card {
+            min-height: 220px;
+        }
+        
+        .game-card img {
+            height: 120px;
+        }
+        
+        .card-title {
+            font-size: 0.9rem;
+        }
+        
+        .tag {
+            font-size: 0.65rem;
+            padding: 2px 4px;
+        }
+    }
+    
+    /* Landscape */
+    @media (orientation: landscape) {
+        .container {
+            max-width: 100%;
+            padding: 0 15px;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .game-card {
+            min-height: 180px;
+        }
+        
+        .game-card img {
+            height: 100px;
+        }
+        
+        .card-title {
+            font-size: 0.85rem;
+        }
+        
+        .tag {
+            font-size: 0.6rem;
+            padding: 1px 3px;
+        }
+    }
+}
+
+/* iPhone 13 Pro styles */
+@media only screen 
+and (min-device-width: 390px) 
+and (max-device-width: 844px) 
+and (-webkit-min-device-pixel-ratio: 3) 
+and (device-aspect-ratio: 19.5/9) {
+    /* Portrait */
+    @media (orientation: portrait) {
+        .container {
+            max-width: 100%;
+            padding: 0 12px;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .game-card {
+            min-height: 230px;
+        }
+        
+        .game-card img {
+            height: 130px;
+        }
+        
+        .card-title {
+            font-size: 0.95rem;
+        }
+        
+        .tag {
+            font-size: 0.7rem;
+            padding: 2px 5px;
+        }
+    }
+    
+    /* Landscape */
+    @media (orientation: landscape) {
+        .container {
+            max-width: 100%;
+            padding: 0 18px;
+        }
+        
+        .game-card-container {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .game-card {
+            min-height: 190px;
+        }
+        
+        .game-card img {
+            height: 110px;
+        }
+        
+        .card-title {
+            font-size: 0.9rem;
+        }
+        
+        .tag {
+            font-size: 0.65rem;
+            padding: 2px 4px;
+        }
+    }
+}
+
+/* Additional shared mobile adjustments */
+@media (max-width: 1024px) {
+    .filter-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        margin-bottom: 15px;
+    }
+    
+    .game-management-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .game-management-container .btn-primary {
+        width: 100%;
+    }
+    
+    .game-details-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .game-details-description {
+        max-height: 200px;
+    }
+    
+    .pagination .page-button,
+    .pagination .ellipsis {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+}
