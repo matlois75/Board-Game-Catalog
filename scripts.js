@@ -1,22 +1,3 @@
-const gameDetails = document.getElementById('gameDetails');
-const gameCardContainer = document.getElementById('gameCardContainer');
-const gameList = document.getElementById('gameList');
-const filterContainer = document.getElementById('filterContainer');
-const addGameModal = document.getElementById('addGameModal');
-const removeGameBtn = document.querySelector('.remove-game-btn');
-const addGameBtn = document.querySelector('.add-game-btn');
-const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
-const translationCache = {};
-let filteredGames = {};
-let isRemoveMode = false;
-let currentLanguage = 'en';
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database()
-
-let isAuthenticated = false;
-const auth = firebase.auth();
-
 const firebaseConfig = {
   apiKey: 'FIREBASE_API_KEY',
   authDomain: 'FIREBASE_AUTH_DOMAIN',
@@ -28,6 +9,27 @@ const firebaseConfig = {
 
 const DEEPL_API_KEY = 'DEEPL_API_KEY';
 const ADMIN_PASSWORD = 'ADMIN_PASSWORD';
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const auth = firebase.auth();
+
+// Now declare other constants and variables
+const gameDetails = document.getElementById('gameDetails');
+const gameCardContainer = document.getElementById('gameCardContainer');
+const gameList = document.getElementById('gameList');
+const filterContainer = document.getElementById('filterContainer');
+const addGameModal = document.getElementById('addGameModal');
+const removeGameBtn = document.querySelector('.remove-game-btn');
+const addGameBtn = document.querySelector('.add-game-btn');
+const closeModalBtn = document.querySelector('#addGameModal .close-modal-btn');
+const translationCache = {};
+
+let filteredGames = {};
+let isRemoveMode = false;
+let currentLanguage = 'en';
+let isAuthenticated = false;
 
 const translations = {
   en: {
