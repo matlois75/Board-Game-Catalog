@@ -20,14 +20,15 @@ body {
     flex-direction: column;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
 }
 
 .container {
-    width: 90%;
+    width: 100%;
     max-width: 1200px;
     margin: auto;
-    overflow: hidden;
-    padding: 0 20px;
+    padding: 0 15px; /* Add some padding on the sides */
+    box-sizing: border-box; /* Include padding in width calculation */
 }
 
 main.container {
@@ -40,8 +41,11 @@ main.container {
     color: white;
     text-align: center;
     padding: 3rem 0;
-    width: 100%;
+    width: 100vw; /* Use viewport width */
+    margin-left: calc(-50vw + 50%); /* Negative margin technique for full width */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative; /* Ensure it's above other content */
+    z-index: 10;
 }
 
 .animated-title {
@@ -559,11 +563,11 @@ footer {
     color: white;
     text-align: center;
     padding: 1.5rem 0;
-    margin-top: auto;
-    width: 100%;
+    width: 100vw; /* Use viewport width */
+    margin-left: calc(-50vw + 50%); /* Negative margin technique for full width */
     margin-top: 4rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    position: relative; /* Ensure it's above other content */
+    z-index: 10;
 }
 
 .language-selector {
@@ -885,12 +889,26 @@ footer {
     /* General layout adjustments */
     .container {
         width: 100%;
-        padding: 0 15px;
+        padding: 0 10px; /* Slightly reduce padding on mobile */
+    }
+
+    /* Adjust content to account for full-width header/footer */
+    main.container {
+        padding-top: 20px;
+        padding-bottom: 20px;
     }
 
     /* Header adjustments */
-    .bg-gradient-radial {
-        padding: 2rem 0;
+    .bg-gradient-radial,
+    footer {
+        width: 100%; /* Fallback for older browsers */
+        width: 100vw;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
     }
 
     h1[data-translate="site-title"] {
