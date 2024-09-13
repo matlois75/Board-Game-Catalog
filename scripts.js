@@ -17,6 +17,17 @@ const database = firebase.database()
 let isAuthenticated = false;
 const auth = firebase.auth();
 
+const firebaseConfig = {
+  apiKey: 'FIREBASE_API_KEY',
+  authDomain: 'FIREBASE_AUTH_DOMAIN',
+  projectId: 'FIREBASE_PROJECT_ID',
+  storageBucket: 'FIREBASE_STORAGE_BUCKET',
+  messagingSenderId: 'FIREBASE_MESSAGING_SENDER_ID',
+  appId: 'FIREBASE_APP_ID'
+};
+
+const DEEPL_API_KEY = 'DEEPL_API_KEY';
+const ADMIN_PASSWORD = 'ADMIN_PASSWORD';
 
 const translations = {
   en: {
