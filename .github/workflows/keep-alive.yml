@@ -1,0 +1,15 @@
+name: Keep Firebase Alive
+on:
+  schedule:
+    - cron: "0 0 */12 * *" # Runs every 12 days
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Database
+        run: |
+          curl "https://family-recipe-book-1a6b8-default-rtdb.firebaseio.com/_keepalive.json" \
+          -X PUT \
+          -d '{"lastPing":'$(date +%s)'}'
